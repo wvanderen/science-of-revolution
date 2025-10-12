@@ -1,0 +1,13 @@
+project_id = ""  # Fill in with Supabase project ref, e.g. abcdefghijklmnop
+
+[api]
+port = 54321
+schema = "public"
+
+[db]
+port = 54322
+shadow_port = 54323
+major_version = 15
+
+[studio]
+port = 54323
