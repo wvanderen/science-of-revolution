@@ -19,6 +19,7 @@ interface ReaderContentProps {
 export function ReaderContent ({ section, highlights = [], contentRef, onHighlightClick }: ReaderContentProps): JSX.Element {
   const { fontSize } = useReaderTheme()
   const fontClass = getReaderFontClass(fontSize)
+  const keyboardHelpId = `reader-keyboard-help-${section.id}`
 
   // Apply highlights to HTML content
   const highlightedHTML = useMemo(() => {
@@ -59,7 +60,12 @@ export function ReaderContent ({ section, highlights = [], contentRef, onHighlig
         className={`prose prose-slate dark:prose-invert sepia:prose-stone max-w-none font-serif ${fontClass}`}
         dangerouslySetInnerHTML={{ __html: highlightedHTML }}
         onClick={handleContentClick}
+        aria-describedby={keyboardHelpId}
       />
+
+      <p id={keyboardHelpId} className="sr-only">
+        Use the up or down arrow keys (or hold Control with the arrows) to move focus one paragraph at a time. Press Tab while focused on a paragraph to move to the next one.
+      </p>
     </article>
   )
 }

@@ -51,14 +51,14 @@ _Last updated: 2025-11-01_
 - FR-Read-1: Library lists curriculum resources with order, estimated reading time, and completion status.
 - FR-Read-2: Reader supports responsive typography, theme switching (light/dark/sepia), and jump navigation by section.
 - FR-Read-3: Offline cache keeps last-opened resource available with warning when stale.
-- FR-Read-4: Keyboard navigation mirrors Readwise Reader accessibility—Up/Down (or `Ctrl+↑/↓`) shifts focus one paragraph at a time, with visible focus styles and screen-reader announcements so the entire article is traversable without a mouse.
+- FR-Read-4: ✓ Keyboard navigation mirrors Readwise Reader accessibility—Up/Down (or `Ctrl+↑/↓`) shifts focus one paragraph at a time, Tab advances between focused paragraphs, with visible focus styles (red/pink background with left border bar, theme-adaptive) and screen-reader announcements so the entire article is traversable without a mouse.
 
 ### 6.3 Highlighting & Notes
 - FR-HL-1: User can select text span, choose color (min 4 colors), and save highlight.
 - FR-HL-2: Users can attach markdown-formatted notes; autosave drafts until submitted.
 - FR-HL-3: Visibility options: `private`, `cohort`, `global` (future). MVP enforces `private` + `cohort`.
 - FR-HL-4: Shared highlights appear in community feed sorted by `posted_at`; include reactions count placeholder for future voting.
-- FR-HL-5: Highlight toolbar must remain available for multi-paragraph selections and support an `h` keyboard shortcut to save using the current color/visibility.
+- FR-HL-5: ✓ Highlight toolbar remains available for multi-paragraph selections and supports an `h` keyboard shortcut that toggles highlights on focused paragraphs (creates yellow private highlight when none exists, removes existing paragraph highlight when pressed again).
 - FR-HL-6: Highlight context menu opens a note editor modal so users can create, edit, or delete notes without leaving the reader, including a `Ctrl+Enter` shortcut to save.
 - FR-HL-7: Highlights with notes display an inline indicator in the reader, and the context menu surfaces existing note text for quick review.
 - FR-HL-8: Saving or updating highlights and notes triggers contextual toast confirmations; errors surface toast feedback as well.
@@ -125,6 +125,7 @@ _Last updated: 2025-11-01_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-10-13_: Implemented keyboard paragraph navigation (Ctrl+Arrow/Arrow/Tab) with visible focus indicators, and enhanced `h` key to toggle paragraph highlights on/off while preserving focus. 4 new tests added, all passing.
 - _2025-11-01_: Document adds keyboard paragraph navigation requirement and records facilitator upload unblock via storage bucket/RLS migration.
 - _2025-10-14_: Highlight save shortcut (`h`) added, paragraph selections stabilized, context menu now shows note previews, inline indicators surface note presence, note editor supports `Ctrl+Enter`, toast feedback covers highlight/note actions, and facilitators gained an upload UI with article scraping + section preview.
 - _2025-10-13_: Milestone 1 completed - Reader UI, highlighting system, notes, and progress tracking fully functional. 37 tests passing.

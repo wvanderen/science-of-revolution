@@ -13,6 +13,7 @@ import { useToast } from '../../../components/providers/ToastProvider'
 import { useProgress, useUpdateProgress } from '../../progress/hooks/useProgress'
 import { useScrollTracking } from '../../progress/hooks/useScrollTracking'
 import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
+import { useParagraphNavigation } from '../hooks/useParagraphNavigation'
 
 /**
  * Main reader page for viewing resource sections
@@ -39,6 +40,8 @@ export function ReaderPage (): JSX.Element {
   const { selection, clearSelection, containerRef } = useTextSelection()
   const createHighlight = useCreateHighlight()
   const deleteHighlight = useDeleteHighlight()
+
+  const { announcement: paragraphAnnouncement, focusedParagraphElement } = useParagraphNavigation({ contentRef: containerRef })
 
   // Fetch highlights for current section
   const { data: highlights = [] } = useHighlights(currentSectionId ?? undefined)
@@ -153,6 +156,108 @@ export function ReaderPage (): JSX.Element {
     }
   }, [noteHighlightId, highlights])
 
+  // Handle 'h' key to highlight focused paragraph
+  useEffect(() => {
+    const handleKeyPress = async (event: KeyboardEvent): Promise<void> => {
+      // Only handle 'h' key
+      if (event.key !== 'h' && event.key !== 'H') return
+
+      // Ignore if typing in an input field
+      const target = event.target as HTMLElement
+      if (['INPUT', 'TEXTAREA'].includes(target.tagName)) return
+      if (target.isContentEditable) return
+
+      // Only proceed if there's a focused paragraph and no text selection
+      if (focusedParagraphElement == null) return
+      if (selection != null) return // User has already selected text
+
+      // Get the paragraph's text content and calculate its position
+      const paragraphText = focusedParagraphElement.textContent?.trim()
+      if (paragraphText == null || paragraphText.length === 0) return
+
+      // Find the position of this paragraph in the section content
+      const container = containerRef.current
+      if (container == null || currentSectionId == null) return
+
+      // Get all text content up to this paragraph to calculate start position
+      let startPos = 0
+      const walker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        null
+      )
+
+      let foundStart = false
+      let node: Node | null
+      while ((node = walker.nextNode()) != null) {
+        if (node.parentElement != null && focusedParagraphElement.contains(node.parentElement)) {
+          foundStart = true
+          break
+        }
+        startPos += node.textContent?.length ?? 0
+      }
+
+      if (!foundStart) return
+
+      const endPos = startPos + paragraphText.length
+
+      // Store the paragraph index to refocus after highlighting
+      const paragraphIndex = focusedParagraphElement.getAttribute('data-reader-paragraph-index')
+
+      // Check if there's already a highlight that exactly matches this paragraph
+      const existingHighlight = highlights.find(h =>
+        h.start_pos === startPos &&
+        h.end_pos === endPos &&
+        h.text_content.trim() === paragraphText
+      )
+
+      try {
+        if (existingHighlight != null) {
+          // Remove the existing highlight
+          await deleteHighlight.mutateAsync(existingHighlight.id)
+          showToast('Highlight removed', { type: 'success' })
+        } else {
+          // Create a new highlight
+          await createHighlight.mutateAsync({
+            resource_section_id: currentSectionId,
+            start_pos: startPos,
+            end_pos: endPos,
+            text_content: paragraphText,
+            color: 'yellow',
+            visibility: 'private'
+          })
+          showToast('Paragraph highlighted', { type: 'success' })
+        }
+
+        // Refocus the paragraph after the DOM updates
+        // Use multiple methods to ensure focus is restored
+        if (paragraphIndex != null) {
+          const refocusParagraph = (): void => {
+            const paragraph = container.querySelector(`[data-reader-paragraph-index="${paragraphIndex}"]`) as HTMLElement
+            if (paragraph != null) {
+              paragraph.focus({ preventScroll: true })
+            }
+          }
+
+          // Try immediately
+          refocusParagraph()
+
+          // Try again after a short delay to handle async DOM updates
+          setTimeout(refocusParagraph, 50)
+          setTimeout(refocusParagraph, 200)
+        }
+      } catch (error) {
+        console.error('Failed to toggle highlight:', error)
+        showToast('Failed to toggle highlight', { type: 'error' })
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress)
+    }
+  }, [focusedParagraphElement, selection, currentSectionId, containerRef, createHighlight, deleteHighlight, highlights, showToast])
+
   const noteHighlight = useMemo<HighlightWithNote | null>(() => {
     if (noteHighlightId == null) return null
     return highlights.find(h => h.id === noteHighlightId) ?? null
@@ -212,6 +317,10 @@ export function ReaderPage (): JSX.Element {
           contentRef={containerRef}
           onHighlightClick={handleHighlightClick}
         />
+
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {paragraphAnnouncement}
+        </div>
 
         {/* Progress indicator - fixed to bottom */}
         <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">

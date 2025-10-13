@@ -108,6 +108,33 @@
     @apply font-serif text-reader-base leading-relaxed;
   }
 
+  .reader-paragraph {
+    @apply outline-none;
+    transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+    border-radius: theme('borderRadius.md');
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
+  }
+
+  /* Default theme - focused paragraph */
+  .reader-paragraph:focus {
+    outline: none;
+    background-color: rgba(185, 28, 28, 0.08);
+    box-shadow: -4px 0 0 0 rgba(185, 28, 28, 0.5);
+  }
+
+  /* Dark theme - focused paragraph */
+  .dark .reader-paragraph:focus {
+    background-color: rgba(239, 68, 68, 0.15);
+    box-shadow: -4px 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+
+  /* Sepia theme - focused paragraph */
+  .sepia .reader-paragraph:focus {
+    background-color: rgba(120, 53, 15, 0.12);
+    box-shadow: -4px 0 0 0 rgba(120, 53, 15, 0.5);
+  }
+
   .highlight-note-indicator {
     @apply inline-flex items-center text-xs text-foreground-muted ml-1 align-middle pointer-events-none;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
