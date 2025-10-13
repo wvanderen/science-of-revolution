@@ -26,12 +26,14 @@
   },
   "devDependencies": {
     "@playwright/test": "1.48.2",
+    "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.1.0",
     "@testing-library/user-event": "14.5.2",
     "@types/node": "22.7.4",
     "@types/react": "18.3.5",
     "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.2",
     "autoprefixer": "10.4.20",
     "eslint": "^8.57.0",
     "eslint-config-standard-with-typescript": "43.0.0",
@@ -45,7 +47,6 @@
     "tailwindcss": "3.4.14",
     "typescript": "5.5.4",
     "vite": "5.4.9",
-    "vitest": "2.1.4",
-    "@vitejs/plugin-react": "4.3.2"
+    "vitest": "2.1.4"
   }
 }

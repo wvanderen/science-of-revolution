@@ -16,14 +16,44 @@
   }
 
   /* Dark theme overrides */
-  .dark body {
-    @apply bg-background-dark text-foreground-dark;
+  .dark {
+    --color-background: #0f172a;
+    --color-surface: #1e293b;
+    --color-border: #334155;
+    --color-foreground: #f8fafc;
+    --color-foreground-muted: #94a3b8;
   }
 
-  /* Sepia theme overrides */
-  .sepia body {
-    @apply bg-background-sepia text-foreground-sepia;
+  .dark body {
+    background-color: #0f172a;
+    color: #f8fafc;
   }
+
+  .dark .bg-background { background-color: #0f172a; }
+  .dark .bg-surface { background-color: #1e293b; }
+  .dark .border-border { border-color: #334155; }
+  .dark .text-foreground { color: #f8fafc; }
+  .dark .text-foreground-muted { color: #94a3b8; }
+
+  /* Sepia theme overrides */
+  .sepia {
+    --color-background: #f5f3ed;
+    --color-surface: #e8e5da;
+    --color-border: #d4cdb8;
+    --color-foreground: #3e3522;
+    --color-foreground-muted: #6b6149;
+  }
+
+  .sepia body {
+    background-color: #f5f3ed;
+    color: #3e3522;
+  }
+
+  .sepia .bg-background { background-color: #f5f3ed; }
+  .sepia .bg-surface { background-color: #e8e5da; }
+  .sepia .border-border { border-color: #d4cdb8; }
+  .sepia .text-foreground { color: #3e3522; }
+  .sepia .text-foreground-muted { color: #6b6149; }
 
   /* Focus visible styles for keyboard navigation (WCAG) */
   *:focus-visible {
@@ -76,6 +106,11 @@
 
   .reader-content {
     @apply font-serif text-reader-base leading-relaxed;
+  }
+
+  .highlight-note-indicator {
+    @apply inline-flex items-center text-xs text-foreground-muted ml-1 align-middle pointer-events-none;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 

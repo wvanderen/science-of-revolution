@@ -163,6 +163,134 @@ export interface Database {
           created_by?: string | null
         }
       }
+      resource_sections: {
+        Row: {
+          id: string
+          resource_id: string
+          title: string
+          order: number
+          content_html: string
+          word_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          resource_id: string
+          title: string
+          order: number
+          content_html: string
+          word_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          resource_id?: string
+          title?: string
+          order?: number
+          content_html?: string
+          word_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      highlights: {
+        Row: {
+          id: string
+          user_id: string
+          resource_section_id: string
+          start_pos: number
+          end_pos: number
+          text_content: string
+          color: string
+          visibility: 'private' | 'cohort' | 'global'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          resource_section_id: string
+          start_pos: number
+          end_pos: number
+          text_content: string
+          color?: string
+          visibility?: 'private' | 'cohort' | 'global'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          resource_section_id?: string
+          start_pos?: number
+          end_pos?: number
+          text_content?: string
+          color?: string
+          visibility?: 'private' | 'cohort' | 'global'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notes: {
+        Row: {
+          id: string
+          highlight_id: string
+          user_id: string
+          content: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          highlight_id: string
+          user_id: string
+          content: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          highlight_id?: string
+          user_id?: string
+          content?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      progress: {
+        Row: {
+          id: string
+          user_id: string
+          resource_section_id: string
+          status: 'not_started' | 'in_progress' | 'completed'
+          scroll_percent: number
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          resource_section_id: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          scroll_percent?: number
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          resource_section_id?: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          scroll_percent?: number
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {

@@ -1,6 +1,6 @@
 # Science of Revolution Web App – Product Spec (Living Document)
 
-_Last updated: 2025-10-12_
+_Last updated: 2025-10-14_
 
 ## 1. Overview
 - **Goal**: Empower Science of Revolution study groups to read, annotate, and discuss assigned materials collaboratively while tracking individual and collective progress.
@@ -57,6 +57,10 @@ _Last updated: 2025-10-12_
 - FR-HL-2: Users can attach markdown-formatted notes; autosave drafts until submitted.
 - FR-HL-3: Visibility options: `private`, `cohort`, `global` (future). MVP enforces `private` + `cohort`.
 - FR-HL-4: Shared highlights appear in community feed sorted by `posted_at`; include reactions count placeholder for future voting.
+- FR-HL-5: Highlight toolbar must remain available for multi-paragraph selections and support an `h` keyboard shortcut to save using the current color/visibility.
+- FR-HL-6: Highlight context menu opens a note editor modal so users can create, edit, or delete notes without leaving the reader, including a `Ctrl+Enter` shortcut to save.
+- FR-HL-7: Highlights with notes display an inline indicator in the reader, and the context menu surfaces existing note text for quick review.
+- FR-HL-8: Saving or updating highlights and notes triggers contextual toast confirmations; errors surface toast feedback as well.
 
 ### 6.4 Progress & Achievements
 - FR-Progress-1: Section completion tracked automatically when ≥90% of text scrolled/read; manual toggle available.
@@ -100,7 +104,7 @@ _Last updated: 2025-10-12_
 
 ## 10. Release Plan
 1. **Milestone 0 – Foundation (Weeks 1-2)**: ✓ Complete – Supabase project setup, schema migration, invite-based auth flows, app shell with dashboard.
-2. **Milestone 1 – Reader & Highlights (Weeks 3-4)**: Resource ingestion, reader UI, highlight/notes MVP, initial progress tracking.
+2. **Milestone 1 – Reader & Highlights (Weeks 3-4)**: ✓ Complete – Resource ingestion, reader UI with themes, highlight system (5 colors), notes functionality, progress tracking with scroll detection, library view.
 3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: Shared highlights feed, comments, achievement engine, realtime updates.
 4. **Milestone 3 – Stats & Admin (Weeks 7-8)**: Leaderboards, dashboards, admin schedule management, CSV exports.
 5. **Pilot Readiness (Week 9)**: QA, usability testing with facilitators, content load, documentation.
@@ -120,7 +124,8 @@ _Last updated: 2025-10-12_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-10-14_: Highlight save shortcut (`h`) added, paragraph selections stabilized, context menu now shows note previews, inline indicators surface note presence, note editor supports `Ctrl+Enter`, and toast feedback covers highlight and note actions.
+- _2025-10-13_: Milestone 1 completed - Reader UI, highlighting system, notes, and progress tracking fully functional. 37 tests passing.
 - _2025-10-12_: Milestone 0 completed - Auth flows with invite codes, profile auto-creation, and dashboard now functional.
 - _2025-10-12_: Updated Milestone 0 progress - Supabase project provisioned, initial schema migration completed.
 - _2025-10-11_: Document created; to be updated as scope evolves.
-
