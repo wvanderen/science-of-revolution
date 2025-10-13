@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
 import { validateInviteCode } from '../lib/auth'
 
@@ -140,6 +140,12 @@ const InviteGatePage = (): JSX.Element => {
             {loading ? 'Creating account…' : 'Continue'}
           </button>
         </form>
+        <div className="text-center text-sm text-slate-300">
+          Already have an account?{' '}
+          <Link to="/login" className="text-primary underline">
+            Sign in instead
+          </Link>
+        </div>
       </div>
     </div>
   )

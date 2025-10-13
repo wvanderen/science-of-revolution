@@ -1,11 +1,14 @@
+import { Link } from 'react-router-dom'
 import { useResources } from '../hooks/useResources'
 import { LibraryList } from '../components/LibraryList'
+import { useProfile } from '../../../hooks/useProfile'
 
 /**
  * Main library page displaying available reading resources
  */
 export function LibraryPage (): JSX.Element {
   const { data: resources, isLoading, error } = useResources()
+  const { isFacilitator } = useProfile()
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,6 +21,14 @@ export function LibraryPage (): JSX.Element {
             Explore reading materials for Marxist study
           </p>
         </header>
+
+        {isFacilitator && (
+          <div className="mb-8">
+            <Link to="/library/upload" className="btn btn-primary text-sm py-2 px-4">
+              Upload new resource
+            </Link>
+          </div>
+        )}
 
         {isLoading && (
           <div className="text-center py-12">

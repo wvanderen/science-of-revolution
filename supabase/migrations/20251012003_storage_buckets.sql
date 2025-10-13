@@ -182,5 +182,16 @@ create policy "Users can delete their own uploads"
 -- HELPER COMMENTS
 -- ============================================
 
-comment on table storage.buckets is 'Storage buckets for resources, avatars, and user uploads';
-comment on table storage.objects is 'Storage objects with RLS policies for secure access control';
+do $$
+begin
+  comment on table storage.buckets is 'Storage buckets for resources, avatars, and user uploads';
+exception when insufficient_privilege then
+  null; -- happens on local reset when not bucket owner
+end $$;
+
+do $$
+begin
+  comment on table storage.objects is 'Storage objects with RLS policies for secure access control';
+exception when insufficient_privilege then
+  null;
+end $$;

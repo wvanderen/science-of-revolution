@@ -5,7 +5,7 @@
 
 ## Priority P0 (Blockers) ✅ COMPLETE
 1. ✅ Create database migration for M1 schema: `resource_sections`, `highlights`, `notes`, `progress` tables with RLS policies
-2. ✅ Build resource ingestion pipeline: support markdown/HTML upload, parse into sections, store in database
+2. ✅ Build resource ingestion pipeline: support markdown/HTML upload, parse into sections, store in database (storage credentials verified via `20251101001_facilitator_resource_upload_permissions.sql`)
 3. ✅ Implement reader UI: responsive layout, section navigation, theme switching (light/dark/sepia)
 4. ✅ Develop highlighting system: text selection, multi-color palette (5 colors), persist highlights with position anchoring
 5. ✅ Add progress tracking: scroll position detection (≥90% completion threshold), persist status
@@ -14,15 +14,16 @@
 1. ✅ Implement notes functionality: attach markdown notes to highlights, inline editing
 2. ✅ Build visibility controls for highlights: private vs cohort sharing toggles
 3. ✅ Create reader utilities: text zoom (4 sizes), font options, section jump navigation
-4. ⏸️ Add offline caching: deferred to post-MVP (localStorage architecture prepared)
-5. ✅ Build basic library view: list resources with sequence order, metadata, reading time estimates
+4. ♻️ Keyboard paragraph navigation accessibility (NEW TOP PRIORITY): enable arrow/tab controls to move focus paragraph-by-paragraph in reader, following Readwise Reader UX patterns
+5. ⏸️ Add offline caching: deferred to post-MVP (localStorage architecture prepared)
+6. ✅ Build basic library view: list resources with sequence order, metadata, reading time estimates
 
 ## Priority P2 (Nice to Have within Milestone)
 1. Add reading time estimates based on word count
-2. Implement keyboard shortcuts for reader (scroll, highlight, navigate)
-3. Build highlight export functionality (JSON/CSV)
-4. Add reading session analytics (time spent per section)
-5. Create facilitator resource upload UI with preview
+2. Build highlight export functionality (JSON/CSV)
+3. Add reading session analytics (time spent per section)
+4. ✅ Create facilitator resource upload UI with preview
+5. ✅ Unblock facilitator uploads end-to-end: storage bucket + RLS migration (`20251101001_facilitator_resource_upload_permissions.sql`)
 
 ## Technical Requirements
 

@@ -1,8 +1,24 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
+import supabase from '../lib/supabaseClient'
 import { useSession } from '../hooks/useSession'
+import { useToast } from '../components/providers/ToastProvider'
 
 const AppLayout = (): JSX.Element => {
   const { session, loading } = useSession()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
+
+  const handleSignOut = async (): Promise<void> => {
+    const { error } = await supabase.auth.signOut()
+    if (error != null) {
+      console.error('Failed to sign out', error)
+      showToast('Failed to sign out', { type: 'error' })
+      return
+    }
+
+    showToast('Signed out', { type: 'success' })
+    navigate('/login')
+  }
 
   if (loading) {
     return (
@@ -30,8 +46,16 @@ const AppLayout = (): JSX.Element => {
           <Link to="/" className="text-xl font-bold text-primary">
             Science of Revolution
           </Link>
-          <div className="text-sm text-slate-300">
-            Signed in as <span className="font-semibold">{session.user.email}</span>
+          <div className="flex items-center gap-3 text-sm text-slate-300">
+            <span>
+              Signed in as <span className="font-semibold">{session.user.email}</span>
+            </span>
+            <button
+              onClick={() => { void handleSignOut() }}
+              className="rounded border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-800"
+            >
+              Log out
+            </button>
           </div>
         </div>
       </header>

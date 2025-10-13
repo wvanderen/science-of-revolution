@@ -1,6 +1,6 @@
 # Science of Revolution Web App – Product Spec (Living Document)
 
-_Last updated: 2025-10-14_
+_Last updated: 2025-11-01_
 
 ## 1. Overview
 - **Goal**: Empower Science of Revolution study groups to read, annotate, and discuss assigned materials collaboratively while tracking individual and collective progress.
@@ -39,7 +39,7 @@ _Last updated: 2025-10-14_
 2. **Reading & Highlighting**: From assignment list → opens reader → highlights passage → adds note → chooses visibility (private/cohort/global) → shared highlight appears in feed.
 3. **Progress Tracking**: Completes section → marks as done automatically when end reached → progress dashboard updates → achievements awarded for streaks.
 4. **Community Interaction**: Browses shared highlights feed → comments on a highlight → receives real-time reply notification within app shell.
-5. **Facilitator Workflow**: Uploads PDF/markdown → assigns to cohort schedule → monitors leaderboard for participation → exports progress summary.
+5. **Facilitator Workflow**: Uploads PDF/markdown → assigns to cohort schedule → monitors leaderboard for participation → exports progress summary (storage bucket + RLS permissions enforced by `20251101001_facilitator_resource_upload_permissions.sql`).
 
 ## 6. Functional Requirements
 ### 6.1 Auth & Access
@@ -51,6 +51,7 @@ _Last updated: 2025-10-14_
 - FR-Read-1: Library lists curriculum resources with order, estimated reading time, and completion status.
 - FR-Read-2: Reader supports responsive typography, theme switching (light/dark/sepia), and jump navigation by section.
 - FR-Read-3: Offline cache keeps last-opened resource available with warning when stale.
+- FR-Read-4: Keyboard navigation mirrors Readwise Reader accessibility—Up/Down (or `Ctrl+↑/↓`) shifts focus one paragraph at a time, with visible focus styles and screen-reader announcements so the entire article is traversable without a mouse.
 
 ### 6.3 Highlighting & Notes
 - FR-HL-1: User can select text span, choose color (min 4 colors), and save highlight.
@@ -79,7 +80,7 @@ _Last updated: 2025-10-14_
 
 ### 6.7 Admin Tools
 - FR-Admin-1: Facilitators can create/edit reading schedule entries assigning resources to dates.
-- FR-Admin-2: Resource upload workflow ingests PDF/markdown into `resource_sections` with manual section editing.
+- FR-Admin-2: Resource upload workflow ingests PDF/markdown into `resource_sections` with preview, optional article URL scraping, and prepares for manual section editing (future).
 - FR-Admin-3: Invite/demo code management UI with generate, revoke, and usage stats.
 
 ## 7. Non-Functional Requirements
@@ -124,7 +125,8 @@ _Last updated: 2025-10-14_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
-- _2025-10-14_: Highlight save shortcut (`h`) added, paragraph selections stabilized, context menu now shows note previews, inline indicators surface note presence, note editor supports `Ctrl+Enter`, and toast feedback covers highlight and note actions.
+- _2025-11-01_: Document adds keyboard paragraph navigation requirement and records facilitator upload unblock via storage bucket/RLS migration.
+- _2025-10-14_: Highlight save shortcut (`h`) added, paragraph selections stabilized, context menu now shows note previews, inline indicators surface note presence, note editor supports `Ctrl+Enter`, toast feedback covers highlight/note actions, and facilitators gained an upload UI with article scraping + section preview.
 - _2025-10-13_: Milestone 1 completed - Reader UI, highlighting system, notes, and progress tracking fully functional. 37 tests passing.
 - _2025-10-12_: Milestone 0 completed - Auth flows with invite codes, profile auto-creation, and dashboard now functional.
 - _2025-10-12_: Updated Milestone 0 progress - Supabase project provisioned, initial schema migration completed.
