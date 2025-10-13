@@ -1,6 +1,6 @@
 # Science of Revolution Web App – Product Spec (Living Document)
 
-_Last updated: 2025-10-11_
+_Last updated: 2025-10-12_
 
 ## 1. Overview
 - **Goal**: Empower Science of Revolution study groups to read, annotate, and discuss assigned materials collaboratively while tracking individual and collective progress.
@@ -99,7 +99,7 @@ _Last updated: 2025-10-11_
 - All times stored in UTC; UI supports local timezone display.
 
 ## 10. Release Plan
-1. **Milestone 0 – Foundation (Weeks 1-2)**: Supabase project setup, schema migration, auth flows, app shell scaffolding.
+1. **Milestone 0 – Foundation (Weeks 1-2)**: ✓ Complete – Supabase project setup, schema migration, invite-based auth flows, app shell with dashboard.
 2. **Milestone 1 – Reader & Highlights (Weeks 3-4)**: Resource ingestion, reader UI, highlight/notes MVP, initial progress tracking.
 3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: Shared highlights feed, comments, achievement engine, realtime updates.
 4. **Milestone 3 – Stats & Admin (Weeks 7-8)**: Leaderboards, dashboards, admin schedule management, CSV exports.
@@ -120,5 +120,7 @@ _Last updated: 2025-10-11_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-10-12_: Milestone 0 completed - Auth flows with invite codes, profile auto-creation, and dashboard now functional.
+- _2025-10-12_: Updated Milestone 0 progress - Supabase project provisioned, initial schema migration completed.
 - _2025-10-11_: Document created; to be updated as scope evolves.
 

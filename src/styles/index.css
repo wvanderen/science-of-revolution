@@ -2,6 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+@layer base {
+  /* Base styles */
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Dark theme overrides */
+  .dark body {
+    @apply bg-background-dark text-foreground-dark;
+  }
+
+  /* Sepia theme overrides */
+  .sepia body {
+    @apply bg-background-sepia text-foreground-sepia;
+  }
+
+  /* Focus visible styles for keyboard navigation (WCAG) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Improve readability */
+  p, li, dd {
+    text-wrap: pretty;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* Button base */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors duration-150;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-hover;
+  }
+
+  .btn-secondary {
+    @apply bg-surface text-foreground border border-border hover:bg-surface/80;
+  }
+
+  /* Input base */
+  .input {
+    @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply placeholder:text-foreground-muted;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Card base */
+  .card {
+    @apply rounded-xl border border-border bg-surface p-6 shadow-sm;
+  }
+
+  /* Reader container */
+  .reader-container {
+    @apply max-w-2xl mx-auto px-4 sm:px-6;
+  }
+
+  .reader-content {
+    @apply font-serif text-reader-base leading-relaxed;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar (optional) */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-surface;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-foreground-muted;
+  }
+
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
 }

@@ -1,10 +1,12 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
+import { validateInviteCode } from '../lib/auth'
 
 const InviteGatePage = (): JSX.Element => {
   const navigate = useNavigate()
   const [inviteCode, setInviteCode] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,18 +21,34 @@ const InviteGatePage = (): JSX.Element => {
       return
     }
 
+    if (!displayName) {
+      setError('Display name required')
+      return
+    }
+
     if (!email || !password) {
       setError('Email and password required')
       return
     }
 
     setLoading(true)
+
+    // Step 1: Validate invite code
+    const inviteValidation = await validateInviteCode(inviteCode)
+    if (!inviteValidation.valid) {
+      setError(inviteValidation.error ?? 'Invalid invite code')
+      setLoading(false)
+      return
+    }
+
+    // Step 2: Sign up user (trigger will auto-create profile and assign cohort)
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          invite_code: inviteCode
+          invite_code: inviteCode,
+          display_name: displayName
         }
       }
     })
@@ -66,6 +84,19 @@ const InviteGatePage = (): JSX.Element => {
               value={inviteCode}
               onChange={(event) => setInviteCode(event.target.value.trim())}
               autoComplete="off"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium" htmlFor="displayName">
+              Display name
+            </label>
+            <input
+              id="displayName"
+              name="displayName"
+              className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              autoComplete="name"
             />
           </div>
           <div className="space-y-2">
