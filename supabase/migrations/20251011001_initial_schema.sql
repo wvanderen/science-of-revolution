@@ -1,11 +1,10 @@
 -- Initial schema for Science of Revolution Web App
 -- Generates core entities required for Milestone 0 foundation
 
-create extension if not exists "uuid-ossp";
 create extension if not exists pgcrypto;
 
 create table if not exists public.cohorts (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     name text not null,
     description text,
     start_date date,
@@ -35,7 +34,7 @@ create table if not exists public.user_cohorts (
 );
 
 create table if not exists public.resources (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     title text not null,
     author text,
     type text not null default 'document',
