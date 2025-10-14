@@ -11,6 +11,7 @@ interface ReaderToolbarProps {
   onSectionSelect: (sectionId: string) => void
   onClose?: () => void
   progress?: Progress | null
+  scrollPercent: number
   onOpenPreferences?: () => void
   onToggleCompleted?: () => void
   onEditDocument?: () => void
@@ -25,11 +26,11 @@ export function ReaderToolbar ({
   onSectionSelect,
   onClose,
   progress,
+  scrollPercent,
   onOpenPreferences,
   onToggleCompleted,
   onEditDocument
 }: ReaderToolbarProps): JSX.Element {
-  const scrollPercent = progress?.scroll_percent ?? 0
   const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false)
   const { isFacilitator } = useProfile()
 

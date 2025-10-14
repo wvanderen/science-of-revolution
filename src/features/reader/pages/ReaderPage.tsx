@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useResource } from '../../library/hooks/useResources'
 import { ReaderLayout } from '../components/ReaderLayout'
@@ -8,14 +8,36 @@ import { HighlightToolbar } from '../../highlights/components/HighlightToolbar'
 import { HighlightMenu } from '../../highlights/components/HighlightMenu'
 import { useTextSelection } from '../../highlights/hooks/useTextSelection'
 import { useCreateHighlight, useHighlights, useDeleteHighlight, type HighlightWithNote } from '../../highlights/hooks/useHighlights'
+import { getTextSelection } from '../../highlights/utils/textAnchoring'
 import { useToast } from '../../../components/providers/ToastProvider'
 import { useProgress, useUpdateProgress, useToggleCompleted } from '../../progress/hooks/useProgress'
-import { useScrollTracking } from '../../progress/hooks/useScrollTracking'
 import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
 import { useParagraphNavigation } from '../hooks/useParagraphNavigation'
 import { ReaderPreferencesPanel } from '../../preferences/components/ReaderPreferencesPanel'
 import { EditDocumentModal } from '../components/EditDocumentModal'
 import { useQueryClient } from '@tanstack/react-query'
+
+function areHighlightListsEqual (
+  previous: HighlightWithNote[] | undefined,
+  next: HighlightWithNote[]
+): boolean {
+  if (previous == null) return next.length === 0
+  if (previous.length !== next.length) return false
+
+  for (let i = 0; i < previous.length; i++) {
+    const prevItem = previous[i]
+    const nextItem = next[i]
+
+    if (prevItem.id !== nextItem.id) return false
+    if (prevItem.updated_at !== nextItem.updated_at) return false
+
+    const prevNoteUpdated = prevItem.note?.updated_at ?? null
+    const nextNoteUpdated = nextItem.note?.updated_at ?? null
+    if (prevNoteUpdated !== nextNoteUpdated) return false
+  }
+
+  return true
+}
 
 /**
  * Main reader page for viewing resource sections
@@ -27,12 +49,84 @@ export function ReaderPage (): JSX.Element {
   const { data: resource, isLoading, error } = useResource(resourceId)
   const { showToast } = useToast()
   const queryClient = useQueryClient()
+  const sectionRefs = useRef(new Map<string, HTMLElement>())
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const currentSectionIdRef = useRef<string | null>(null)
+  const isProgrammaticScrollRef = useRef(false)
+  const [sectionHighlights, setSectionHighlights] = useState<Record<string, HighlightWithNote[]>>({})
+  const lastReportedProgressRef = useRef<number | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const registerSectionRef = useCallback((sectionId: string, element: HTMLElement | null) => {
+    const refs = sectionRefs.current
 
+    if (element != null) {
+      refs.set(sectionId, element)
+      if (observerRef.current != null) {
+        observerRef.current.observe(element)
+      }
+    } else {
+      const existing = refs.get(sectionId)
+      if (existing != null && observerRef.current != null) {
+        observerRef.current.unobserve(existing)
+      }
+      refs.delete(sectionId)
+    }
+  }, [])
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (container == null) return
+
+    if (observerRef.current != null) {
+      observerRef.current.disconnect()
+      observerRef.current = null
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.length === 0) return
+      if (isProgrammaticScrollRef.current) return
+
+      const visibleEntries = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top)
+
+      if (visibleEntries.length === 0) return
+
+      const nextSectionElement = visibleEntries[0].target as HTMLElement
+      const nextSectionId = nextSectionElement.dataset.sectionId
+      if (nextSectionId == null) return
+      if (currentSectionIdRef.current === nextSectionId) return
+
+      setCurrentSectionId(nextSectionId)
+
+      // Update URL without adding history entries during scroll
+      const url = new URL(window.location.href)
+      url.searchParams.set('section', nextSectionId)
+      window.history.replaceState({}, '', url)
+    }, {
+      root: container,
+      threshold: [0.1, 0.25, 0.5],
+      rootMargin: '-30% 0px -50% 0px'
+    })
+
+    observerRef.current = observer
+
+    sectionRefs.current.forEach(element => {
+      observer.observe(element)
+    })
+
+    return () => {
+      observer.disconnect()
+      observerRef.current = null
+    }
+  }, [resource?.sections?.length])
   // Get section ID from URL query params
   const searchParams = new URLSearchParams(window.location.search)
   const urlSectionId = searchParams.get('section')
 
   const [currentSectionId, setCurrentSectionId] = useState<string | null>(null)
+  useEffect(() => {
+    currentSectionIdRef.current = currentSectionId
+  }, [currentSectionId])
 
   // Highlight menu state
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null)
@@ -53,24 +147,82 @@ export function ReaderPage (): JSX.Element {
 
   // Fetch highlights for current section
   const { data: highlights = [] } = useHighlights(currentSectionId ?? undefined)
+  useEffect(() => {
+    if (currentSectionId == null) return
+
+    setSectionHighlights(prev => {
+      const existing = prev[currentSectionId]
+      if (areHighlightListsEqual(existing, highlights)) {
+        return prev
+      }
+      return {
+        ...prev,
+        [currentSectionId]: highlights
+      }
+    })
+  }, [currentSectionId, highlights])
+  const highlightLookup = useMemo(() => {
+    const lookup: Record<string, HighlightWithNote> = {}
+    Object.values(sectionHighlights).forEach(sectionList => {
+      sectionList.forEach(highlight => {
+        lookup[highlight.id] = highlight
+      })
+    })
+    return lookup
+  }, [sectionHighlights])
 
   // Progress tracking
   const { data: progress } = useProgress(currentSectionId ?? undefined)
   const updateProgress = useUpdateProgress()
   const toggleCompleted = useToggleCompleted()
+  const sendProgressUpdate = useCallback((sectionId: string, percent: number) => {
+    updateProgress.mutate({ sectionId, scrollPercent: percent })
+  }, [updateProgress])
+  const updateGlobalProgress = useCallback(() => {
+    const container = scrollContainerRef.current
+    if (container == null) return
 
-  // Scroll tracking
-  const { containerRef: scrollContainerRef } = useScrollTracking({
-    onScrollPercentChange: (percent) => {
-      // Update local state immediately for responsive UI
-      setLocalScrollPercent(percent)
+    const scrollHeight = container.scrollHeight - container.clientHeight
+    const rawRatio = scrollHeight > 0 ? container.scrollTop / scrollHeight : 0
+    const clampedRatio = Math.max(0, Math.min(rawRatio, 1))
+    const percent = Math.round(clampedRatio * 100)
 
-      if (currentSectionId != null) {
-        updateProgress.mutate({ sectionId: currentSectionId, scrollPercent: percent })
-      }
-    },
-    debounceMs: 200
-  })
+    setLocalScrollPercent(percent)
+
+    const lastReported = lastReportedProgressRef.current
+    const activeSectionId = currentSectionIdRef.current
+
+    if (activeSectionId != null && (lastReported == null || Math.abs(percent - lastReported) >= 1)) {
+      lastReportedProgressRef.current = percent
+      sendProgressUpdate(activeSectionId, percent)
+    }
+  }, [sendProgressUpdate])
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (container == null) return
+
+    const handleScroll = () => {
+      updateGlobalProgress()
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Calculate initial progress after layout stabilizes
+    requestAnimationFrame(() => {
+      updateGlobalProgress()
+    })
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [updateGlobalProgress])
+  useEffect(() => {
+    if (currentSectionId == null) return
+    requestAnimationFrame(() => {
+      updateGlobalProgress()
+    })
+  }, [currentSectionId, updateGlobalProgress])
 
   // Initialize current section when resource loads
   useEffect(() => {
@@ -86,14 +238,34 @@ export function ReaderPage (): JSX.Element {
     }
   }, [resource, urlSectionId])
 
-  // Reset local scroll percent when section changes
   useEffect(() => {
-    setLocalScrollPercent(progress?.scroll_percent ?? 0)
-  }, [currentSectionId, progress?.scroll_percent])
+    lastReportedProgressRef.current = null
+  }, [currentSectionId])
 
   // Update URL when section changes
   const handleSectionChange = (sectionId: string): void => {
     setCurrentSectionId(sectionId)
+
+    const sectionElement = sectionRefs.current.get(sectionId)
+    const container = scrollContainerRef.current
+
+    if (sectionElement != null && container != null) {
+      isProgrammaticScrollRef.current = true
+      const offsetTop = sectionElement.offsetTop
+      const headerOffset = 32
+      const targetScrollTop = Math.max(0, offsetTop - headerOffset)
+
+      container.scrollTo({
+        top: targetScrollTop,
+        behavior: 'smooth'
+      })
+
+      window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false
+        updateGlobalProgress()
+      }, 400)
+    }
+
     // Update URL without page reload
     const url = new URL(window.location.href)
     url.searchParams.set('section', sectionId)
@@ -106,18 +278,55 @@ export function ReaderPage (): JSX.Element {
 
   // Handle highlight creation
   const handleCreateHighlight = async (color: string, visibility: 'private' | 'cohort'): Promise<void> => {
-    if (selection == null || currentSectionId == null) return
+    if (selection == null) return
+
+    const activeSelection = window.getSelection()
+    if (activeSelection == null || activeSelection.rangeCount === 0) return
+
+    const range = activeSelection.getRangeAt(0)
+    const commonAncestor = range.commonAncestorContainer
+    let sectionContentElement: HTMLElement | null = null
+
+    if (commonAncestor instanceof HTMLElement) {
+      sectionContentElement = commonAncestor.closest('[data-section-content="true"]') as HTMLElement | null
+    } else if (commonAncestor != null) {
+      sectionContentElement = commonAncestor.parentElement?.closest('[data-section-content="true"]') as HTMLElement | null
+    }
+
+    if (sectionContentElement == null) return
+
+    const sectionElement = sectionContentElement.closest('[data-section-id]') as HTMLElement | null
+    const sectionId = sectionElement?.dataset.sectionId
+    if (sectionId == null) return
+
+    const sectionSelection = getTextSelection(sectionContentElement)
+    if (sectionSelection == null) return
 
     try {
-      await createHighlight.mutateAsync({
-        resource_section_id: currentSectionId,
-        start_pos: selection.startPos,
-        end_pos: selection.endPos,
-        text_content: selection.text,
+      const createdHighlight = await createHighlight.mutateAsync({
+        resource_section_id: sectionId,
+        start_pos: sectionSelection.startPos,
+        end_pos: sectionSelection.endPos,
+        text_content: sectionSelection.text,
         color,
         visibility
       })
 
+      const highlightForCache: HighlightWithNote = {
+        ...createdHighlight,
+        note: null
+      }
+
+      setSectionHighlights(prev => {
+        const existing = prev[sectionId] ?? []
+        const updated = [...existing, highlightForCache].sort((a, b) => a.start_pos - b.start_pos)
+        return {
+          ...prev,
+          [sectionId]: updated
+        }
+      })
+
+      setCurrentSectionId(sectionId)
       showToast('Highlight saved', { type: 'success' })
       clearSelection()
     } catch (error) {
@@ -133,14 +342,35 @@ export function ReaderPage (): JSX.Element {
   // Handle clicking on a highlight to show menu
   const handleHighlightClick = (highlightId: string, event: React.MouseEvent): void => {
     event.preventDefault()
+
+    const targetHighlight = highlightLookup[highlightId]
+    if (targetHighlight != null && targetHighlight.resource_section_id != null) {
+      setCurrentSectionId(targetHighlight.resource_section_id)
+    }
+
     setSelectedHighlightId(highlightId)
     setMenuPosition({ x: event.clientX, y: event.clientY })
   }
 
   // Handle deleting a highlight
   const handleDeleteHighlight = async (highlightId: string): Promise<void> => {
+    const targetHighlight = highlightLookup[highlightId]
+    const sectionId = targetHighlight?.resource_section_id ?? null
+
     try {
       await deleteHighlight.mutateAsync(highlightId)
+      if (sectionId != null) {
+        setSectionHighlights(prev => {
+          const existing = prev[sectionId]
+          if (existing == null) return prev
+          const filtered = existing.filter(h => h.id !== highlightId)
+          if (filtered.length === existing.length) return prev
+          return {
+            ...prev,
+            [sectionId]: filtered
+          }
+        })
+      }
       if (noteHighlightId === highlightId) {
         setNoteHighlightId(null)
       }
@@ -200,44 +430,44 @@ export function ReaderPage (): JSX.Element {
   useEffect(() => {
     if (noteHighlightId == null) return
 
-    const highlightExists = highlights.some(h => h.id === noteHighlightId)
-    if (!highlightExists) {
+    if (highlightLookup[noteHighlightId] == null) {
       setNoteHighlightId(null)
     }
-  }, [noteHighlightId, highlights])
+  }, [noteHighlightId, highlightLookup])
+  useEffect(() => {
+    if (selectedHighlightId == null) return
+    if (highlightLookup[selectedHighlightId] == null) {
+      setSelectedHighlightId(null)
+      setMenuPosition(null)
+    }
+  }, [selectedHighlightId, highlightLookup])
 
   // Handle 'h' key to highlight focused paragraph
   useEffect(() => {
     const handleKeyPress = async (event: KeyboardEvent): Promise<void> => {
-      // Only handle 'h' key
       if (event.key !== 'h' && event.key !== 'H') return
 
-      // Ignore if typing in an input field
       const target = event.target as HTMLElement
       if (['INPUT', 'TEXTAREA'].includes(target.tagName)) return
       if (target.isContentEditable) return
 
-      // Only proceed if there's a focused paragraph and no text selection
       if (focusedParagraphElement == null) return
-      if (selection != null) return // User has already selected text
+      if (selection != null) return
 
-      // Get the paragraph's text content and calculate its position
       const paragraphText = focusedParagraphElement.textContent?.trim()
       if (paragraphText == null || paragraphText.length === 0) return
 
-      // Find the position of this paragraph in the section content
-      const container = containerRef.current
-      if (container == null || currentSectionId == null) return
+      const sectionElement = focusedParagraphElement.closest('[data-section-id]') as HTMLElement | null
+      const sectionId = sectionElement?.dataset.sectionId
+      if (sectionElement == null || sectionId == null) return
 
-      // Get all text content up to this paragraph to calculate start position
+      const sectionContentElement = sectionElement.querySelector('[data-section-content="true"]') as HTMLElement | null
+      if (sectionContentElement == null) return
+
       let startPos = 0
-      const walker = document.createTreeWalker(
-        container,
-        NodeFilter.SHOW_TEXT,
-        null
-      )
-
       let foundStart = false
+      const walker = document.createTreeWalker(sectionContentElement, NodeFilter.SHOW_TEXT, null)
+
       let node: Node | null
       while ((node = walker.nextNode()) != null) {
         if (node.parentElement != null && focusedParagraphElement.contains(node.parentElement)) {
@@ -250,12 +480,10 @@ export function ReaderPage (): JSX.Element {
       if (!foundStart) return
 
       const endPos = startPos + paragraphText.length
-
-      // Store the paragraph index to refocus after highlighting
       const paragraphIndex = focusedParagraphElement.getAttribute('data-reader-paragraph-index')
+      const sectionHighlightList = sectionHighlights[sectionId] ?? []
 
-      // Check if there's already a highlight that exactly matches this paragraph
-      const existingHighlight = highlights.find(h =>
+      const existingHighlight = sectionHighlightList.find(h =>
         h.start_pos === startPos &&
         h.end_pos === endPos &&
         h.text_content.trim() === paragraphText
@@ -263,38 +491,60 @@ export function ReaderPage (): JSX.Element {
 
       try {
         if (existingHighlight != null) {
-          // Remove the existing highlight
           await deleteHighlight.mutateAsync(existingHighlight.id)
+          setSectionHighlights(prev => {
+            const existing = prev[sectionId]
+            if (existing == null) return prev
+            const updated = existing.filter(h => h.id !== existingHighlight.id)
+            if (updated.length === existing.length) return prev
+            return {
+              ...prev,
+              [sectionId]: updated
+            }
+          })
           showToast('Highlight removed', { type: 'success' })
         } else {
-          // Create a new highlight
-          await createHighlight.mutateAsync({
-            resource_section_id: currentSectionId,
+          const newHighlight = await createHighlight.mutateAsync({
+            resource_section_id: sectionId,
             start_pos: startPos,
             end_pos: endPos,
             text_content: paragraphText,
             color: 'yellow',
             visibility: 'private'
           })
+
+          const highlightForCache: HighlightWithNote = {
+            ...newHighlight,
+            note: null
+          }
+
+          setSectionHighlights(prev => {
+            const existing = prev[sectionId] ?? []
+            const updated = [...existing, highlightForCache].sort((a, b) => a.start_pos - b.start_pos)
+            return {
+              ...prev,
+              [sectionId]: updated
+            }
+          })
+
+          setCurrentSectionId(sectionId)
           showToast('Paragraph highlighted', { type: 'success' })
         }
 
-        // Refocus the paragraph after the DOM updates
-        // Use multiple methods to ensure focus is restored
         if (paragraphIndex != null) {
-          const refocusParagraph = (): void => {
-            const paragraph = container.querySelector(`[data-reader-paragraph-index="${paragraphIndex}"]`) as HTMLElement
-            if (paragraph != null) {
-              paragraph.focus({ preventScroll: true })
+          const container = containerRef.current
+          if (container != null) {
+            const refocusParagraph = (): void => {
+              const paragraph = container.querySelector(`[data-reader-paragraph-index="${paragraphIndex}"]`) as HTMLElement
+              if (paragraph != null) {
+                paragraph.focus({ preventScroll: true })
+              }
             }
+
+            refocusParagraph()
+            setTimeout(refocusParagraph, 50)
+            setTimeout(refocusParagraph, 200)
           }
-
-          // Try immediately
-          refocusParagraph()
-
-          // Try again after a short delay to handle async DOM updates
-          setTimeout(refocusParagraph, 50)
-          setTimeout(refocusParagraph, 200)
         }
       } catch (error) {
         console.error('Failed to toggle highlight:', error)
@@ -306,12 +556,12 @@ export function ReaderPage (): JSX.Element {
     return () => {
       window.removeEventListener('keydown', handleKeyPress)
     }
-  }, [focusedParagraphElement, selection, currentSectionId, containerRef, createHighlight, deleteHighlight, highlights, showToast])
+  }, [focusedParagraphElement, selection, containerRef, createHighlight, deleteHighlight, sectionHighlights, showToast])
 
   const noteHighlight = useMemo<HighlightWithNote | null>(() => {
     if (noteHighlightId == null) return null
-    return highlights.find(h => h.id === noteHighlightId) ?? null
-  }, [noteHighlightId, highlights])
+    return highlightLookup[noteHighlightId] ?? null
+  }, [noteHighlightId, highlightLookup])
 
   if (isLoading) {
     return (
@@ -336,23 +586,18 @@ export function ReaderPage (): JSX.Element {
     )
   }
 
-  const currentSection = resource.sections.find(s => s.id === currentSectionId)
-
-  if (currentSection == null) {
+  if (resource.sections.length === 0) {
     return (
       <ReaderLayout>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <div className="text-foreground-muted">No section selected</div>
+          <div className="text-foreground-muted">No sections available</div>
         </div>
       </ReaderLayout>
     )
   }
 
   // Combine database progress with local scroll percent for immediate UI feedback
-  const displayProgress = progress ? {
-    ...progress,
-    scroll_percent: localScrollPercent
-  } : null
+  const displayProgress = progress ?? null
 
   return (
     <ReaderLayout>
@@ -363,6 +608,7 @@ export function ReaderPage (): JSX.Element {
         onSectionSelect={handleSectionChange}
         onClose={handleClose}
         progress={displayProgress}
+        scrollPercent={localScrollPercent}
         onOpenPreferences={handleOpenPreferences}
         onToggleCompleted={handleToggleCompleted}
         onEditDocument={handleOpenEditDocument}
@@ -374,10 +620,11 @@ export function ReaderPage (): JSX.Element {
         className="flex-1 min-h-0 overflow-y-auto pt-16"
       >
         <ReaderContent
-          section={currentSection}
-          highlights={highlights}
+          sections={resource.sections}
+          sectionHighlights={sectionHighlights}
           contentRef={containerRef}
           onHighlightClick={handleHighlightClick}
+          onSectionRef={registerSectionRef}
         />
 
         <div aria-live="polite" aria-atomic="true" className="sr-only">
@@ -393,9 +640,9 @@ export function ReaderPage (): JSX.Element {
       />
 
       {/* Highlight menu - shows when clicking on a highlight */}
-      {selectedHighlightId != null && menuPosition != null && (
+      {selectedHighlightId != null && menuPosition != null && highlightLookup[selectedHighlightId] != null && (
         <HighlightMenu
-          highlight={highlights.find(h => h.id === selectedHighlightId)!}
+          highlight={highlightLookup[selectedHighlightId]!}
           position={menuPosition}
           onAddNote={handleAddNote}
           onDelete={handleDeleteHighlight}

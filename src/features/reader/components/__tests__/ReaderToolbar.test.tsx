@@ -41,6 +41,7 @@ describe('ReaderToolbar', () => {
     onSectionSelect: vi.fn(),
     onClose: vi.fn(),
     progress: mockProgress,
+    scrollPercent: mockProgress.scroll_percent,
     onOpenPreferences: vi.fn(),
     onToggleCompleted: vi.fn(),
     onEditDocument: vi.fn()
@@ -88,14 +89,22 @@ describe('ReaderToolbar', () => {
 
   it('displays progress percentage correctly', () => {
     const customProgress = { ...mockProgress, scroll_percent: 75 }
-    render(<ReaderToolbar {...defaultProps} progress={customProgress} />)
+    render(<ReaderToolbar
+      {...defaultProps}
+      progress={customProgress}
+      scrollPercent={customProgress.scroll_percent}
+    />)
 
     expect(screen.getByText('75%')).toBeInTheDocument()
   })
 
   it('shows progress bar with correct width', () => {
     const customProgress = { ...mockProgress, scroll_percent: 60 }
-    render(<ReaderToolbar {...defaultProps} progress={customProgress} />)
+    render(<ReaderToolbar
+      {...defaultProps}
+      progress={customProgress}
+      scrollPercent={customProgress.scroll_percent}
+    />)
 
     const progressBar = screen.getByRole('progressbar')
     expect(progressBar).toHaveAttribute('aria-valuenow', '60')
