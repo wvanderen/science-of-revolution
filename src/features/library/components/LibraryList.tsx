@@ -1,24 +1,30 @@
 import { ResourceCard } from './ResourceCard'
+import { EmptyState } from './EmptyState'
 import { type ResourceWithSections } from '../hooks/useResources'
 
 interface LibraryListProps {
   resources: ResourceWithSections[]
+  filteredOut?: boolean
+  activeFiltersCount?: number
+  onClearFilters?: () => void
 }
 
 /**
  * Grid layout of resource cards
  */
-export function LibraryList ({ resources }: LibraryListProps): JSX.Element {
+export function LibraryList ({
+  resources,
+  filteredOut = false,
+  activeFiltersCount = 0,
+  onClearFilters
+}: LibraryListProps): JSX.Element {
   if (resources.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-foreground-muted text-lg">
-          No resources available yet
-        </p>
-        <p className="text-foreground-muted text-sm mt-2">
-          Check back soon for reading materials
-        </p>
-      </div>
+      <EmptyState
+        filteredOut={filteredOut}
+        activeFiltersCount={activeFiltersCount}
+        onClearFilters={onClearFilters}
+      />
     )
   }
 

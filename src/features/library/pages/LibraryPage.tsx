@@ -3,9 +3,12 @@ import { useState, useEffect } from 'react'
 import { useResources } from '../hooks/useResources'
 import { useLibraryFilters, useFilterOptions } from '../hooks/useLibraryFilters'
 import { useCompletelyFilteredResources } from '../hooks/useFilteredResources'
+import { useReadingInsights } from '../hooks/useReadingInsights'
 import { LibraryList } from '../components/LibraryList'
 import { LibraryFilterBar } from '../components/LibraryFilterBar'
 import { MobileFilterSheet } from '../components/MobileFilterSheet'
+import { ReadingInsights } from '../components/ReadingInsights'
+import { InsightsButton } from '../components/InsightsButton'
 import { useProfile } from '../../../hooks/useProfile'
 
 /**
@@ -26,15 +29,21 @@ export function LibraryPage (): JSX.Element {
     setView,
     setStatusFilter,
     setLengthFilter,
-    setTypeFilter
+    setTypeFilter,
+    clearFilters,
+    hasActiveFilters
   } = useLibraryFilters()
 
   // Filter options from resources
   const { types } = useFilterOptions(resources ?? [])
 
-  // Mobile filter sheet state
+  // Reading insights
+  const { data: insights, isLoading: insightsLoading } = useReadingInsights(resources ?? [])
+
+  // Mobile state
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false)
 
   // Detect mobile viewport
   useEffect(() => {
@@ -81,6 +90,9 @@ export function LibraryPage (): JSX.Element {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex gap-8">
+          {/* Main Content */}
+          <div className="flex-1 min-w-0">
         {/* Header - hidden on mobile since it's in filter bar */}
         <div className="hidden md:block mb-8">
           <h1 className="text-4xl font-bold text-foreground font-serif">
@@ -117,28 +129,32 @@ export function LibraryPage (): JSX.Element {
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && !error && !filteredResources?.length && (
-          <div className="text-center py-12">
-            <p className="text-foreground-muted text-lg">
-              {searchQuery || statusFilter !== 'all' || lengthFilter !== 'all' || typeFilter !== 'all'
-                ? 'No resources match your filters'
-                : 'No resources available yet'
-              }
-            </p>
-            <p className="text-foreground-muted text-sm mt-2">
-              {searchQuery || statusFilter !== 'all' || lengthFilter !== 'all' || typeFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Check back soon for reading materials'
-              }
-            </p>
+        {/* Library List with Empty State */}
+            {!isLoading && !error && (
+              <LibraryList
+                resources={filteredResources ?? []}
+                filteredOut={hasActiveFilters}
+                activeFiltersCount={
+                  [searchQuery, statusFilter, lengthFilter, typeFilter].filter(
+                    f => f && f !== 'all' && f !== ''
+                  ).length
+                }
+                onClearFilters={clearFilters}
+              />
+            )}
           </div>
-        )}
 
-        {/* Resource List */}
-        {filteredResources && filteredResources.length > 0 && (
-          <LibraryList resources={filteredResources} />
-        )}
+          {/* Desktop Insights Rail */}
+          {!isMobile && (
+            <div className="hidden lg:block">
+              <ReadingInsights
+                insights={insights}
+                isLoading={insightsLoading}
+                isMobile={false}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile Filter Sheet */}
@@ -155,6 +171,25 @@ export function LibraryPage (): JSX.Element {
           availableTypes={types}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+        />
+      )}
+
+      {/* Mobile Insights Button */}
+      {isMobile && (
+        <InsightsButton
+          onClick={() => setIsInsightsOpen(true)}
+          hasInsights={!!(insights?.recentReading.length || insights?.recommendations.length)}
+        />
+      )}
+
+      {/* Mobile Insights Modal */}
+      {isMobile && (
+        <ReadingInsights
+          insights={insights}
+          isLoading={insightsLoading}
+          isMobile={true}
+          isOpen={isInsightsOpen}
+          onClose={() => setIsInsightsOpen(false)}
         />
       )}
     </div>

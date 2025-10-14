@@ -16,6 +16,7 @@ _Last updated: 2025-11-01_
 - Cohort leaderboards and stats overview (highlights count, completion percent, streaks).
 - Comment threads on reading sections with ability to link to highlights/notes.
 - Admin utilities to manage reading schedule, upload resources, and issue demo codes.
+- **NEW**: Education plan system for structured learning paths with topics and required/further reading.
 
 ### 2.2 Out of Scope (MVP)
 - AI assistant, moderation queues, voting/flair, full Marxist corpus, internationalization, notification emails beyond auth flows.
@@ -78,7 +79,16 @@ _Last updated: 2025-11-01_
 - FR-Stats-2: Cohort summary shows average completion %, total highlights, active streak count.
 - FR-Stats-3: Facilitators can export leaderboard snapshot as CSV.
 
-### 6.7 Admin Tools
+### 6.7 Education Plans & Structured Learning
+- FR-EduPlan-1: Facilitators can create education plans with topics and required/further reading assignments through a step-by-step wizard.
+- FR-EduPlan-2: Plans support topic reordering, estimated time per topic, and difficulty levels (beginner/intermediate/advanced).
+- FR-EduPlan-3: Reading assignments categorize as required, further, or optional with facilitator notes and context.
+- FR-EduPlan-4: Learners can discover and enroll in cohort-assigned plans with visual progress tracking.
+- FR-EduPlan-5: Progress tracking integrates with existing reading progress system, calculating completion at topic and plan levels.
+- FR-EduPlan-6: Plans can be saved as templates for reuse across different cohorts.
+- FR-EduPlan-7: Facilitators can monitor cohort progress through plans with analytics dashboard.
+
+### 6.8 Admin Tools
 - FR-Admin-1: Facilitators can create/edit reading schedule entries assigning resources to dates.
 - FR-Admin-2: Resource upload workflow ingests PDF/markdown into `resource_sections` with preview, optional article URL scraping, and prepares for manual section editing (future).
 - FR-Admin-3: Invite/demo code management UI with generate, revoke, and usage stats.
@@ -106,11 +116,12 @@ _Last updated: 2025-11-01_
 ## 10. Release Plan
 1. **Milestone 0 – Foundation (Weeks 1-2)**: ✓ Complete – Supabase project setup, schema migration, invite-based auth flows, app shell with dashboard.
 2. **Milestone 1 – Reader & Highlights (Weeks 3-4)**: ✓ Complete – Resource ingestion, reader UI with themes, highlight system (5 colors), notes functionality, progress tracking with scroll detection, library view.
-3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: Shared highlights feed, comments, achievement engine, realtime updates, responsive library grid, card refresh, filters/search.
-4. **Milestone 3 – Stats & Admin (Weeks 7-8)**: Leaderboards, dashboards, admin schedule management, CSV exports.
-5. **Milestone 4 – Study Tools & Polish (Weeks 9-10)**: Annotation suite, study modes, insights drawer, accessibility audit.
-6. **Pilot Readiness (Week 11)**: QA, usability testing with facilitators, content load, documentation.
-7. **Pilot Launch (Week 12)**: Soft launch with study group, collect feedback, start backlog for iteration.
+3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: ✓ Complete – Shared highlights feed, comments, achievement engine, realtime updates, responsive library grid, card refresh, filters/search, empty state improvements.
+4. **Milestone 3 – Education Plans Foundation (Weeks 7-8)**: Database schema for education plans, plan creation wizard, topic management, reading assignment, plan discovery and enrollment.
+5. **Milestone 4 – Education Plans Learning Experience (Weeks 9-10)**: Progress tracking system, reader integration, plan navigation, flexible learning paths, facilitator progress monitoring.
+6. **Milestone 5 – Education Plans Advanced Features (Weeks 11-12)**: Plan templates, analytics dashboard, facilitator announcements, optimization and polish.
+7. **Pilot Readiness (Week 13)**: QA, usability testing with facilitators, content load, documentation.
+8. **Pilot Launch (Week 14)**: Soft launch with study group, collect feedback, start backlog for iteration.
 
 ## 11. Quality Strategy
 - Unit/integration testing coverage targets: ≥70% for core modules (auth, reader, highlights).
@@ -126,6 +137,7 @@ _Last updated: 2025-11-01_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-11-14_: Added Education Plan system to scope and release plan, expanding timeline to 14 weeks to accommodate structured learning features.
 - _2025-11-14_: Updated release plan to reflect Milestone 2 UI upgrades and extended timeline for pilot launch.
 - _2025-10-14_: ✓ Completed READ-01 reader header + navigation overhaul - implemented sticky header that condenses on scroll, full-width progress bar, enhanced section navigation with current/total indicators, keyboard shortcuts (←/→, Ctrl+K), visual section indicators, and comprehensive test coverage (15 new tests). Total 73 tests passing.
 - _2025-10-14_: ✓ Completed READ-02 typography and theme preferences - implemented serif/sans font toggle, pixel-precise font sizing (12-32px), 4 WCAG AA compliant themes (light/dark/sepia/high-contrast), Supabase preference persistence, and accessible preferences panel with live preview. All 58 tests passing.

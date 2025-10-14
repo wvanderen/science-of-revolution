@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
+import { BrowserRouter } from 'react-router-dom'
 import { LibraryList } from '../LibraryList'
 import { type ResourceWithSections } from '../../hooks/useResources'
 
@@ -45,10 +46,31 @@ describe('LibraryList', () => {
   ]
 
   it('renders empty state when no resources', () => {
-    render(<LibraryList resources={[]} />)
+    render(
+      <BrowserRouter>
+        <LibraryList resources={[]} />
+      </BrowserRouter>
+    )
 
-    expect(screen.getByText('No resources available yet')).toBeInTheDocument()
-    expect(screen.getByText('Check back soon for reading materials')).toBeInTheDocument()
+    expect(screen.getByText('Your library is waiting')).toBeInTheDocument()
+    expect(screen.getByText(/Start building your personal reading collection/)).toBeInTheDocument()
+  })
+
+  it('renders filtered empty state when filters are active', () => {
+    render(
+      <BrowserRouter>
+        <LibraryList
+          resources={[]}
+          filteredOut={true}
+          activeFiltersCount={2}
+          onClearFilters={vi.fn()}
+        />
+      </BrowserRouter>
+    )
+
+    expect(screen.getByText('No matches found')).toBeInTheDocument()
+    expect(screen.getByText('Try adjusting your 2 filters or search terms.')).toBeInTheDocument()
+    expect(screen.getByText('Clear all filters')).toBeInTheDocument()
   })
 
   it('renders resource cards when resources are provided', () => {

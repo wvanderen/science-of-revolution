@@ -90,8 +90,12 @@ Milestone goal: deliver a cohesive responsive experience across library and read
 
 ## Milestone Completion Checklist
 
-- [ ] Documentation updated (`docs/design-tokens.md`, `docs/spec.md`, new UI walkthrough).  
-- [ ] CI suite (`npm run ci`) passes with added tests and performance budgets.  
-- [ ] Release notes prepared summarizing key UI/UX changes and migration steps.  
+- [ ] Documentation updated (`docs/design-tokens.md`, `docs/spec.md`, new UI walkthrough).
+- [ ] CI suite (`npm run ci`) passes with added tests and performance budgets.
+- [ ] Release notes prepared summarizing key UI/UX changes and migration steps.
 - [ ] Supabase seed data aligned with new features, and smoke-tested in preview environment.
+
+## Next Milestone
+
+**Milestone 3 – Education Plans Foundation**: The next milestone focuses on implementing the core education plan system that enables facilitators to create structured learning paths with topics and reading assignments. See [`docs/milestone-3-education-plans-foundation.md`](./milestone-3-education-plans-foundation.md) for detailed requirements and implementation plan.
 
