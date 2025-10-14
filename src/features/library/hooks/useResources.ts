@@ -48,7 +48,7 @@ export function useResources () {
       // Combine resources with their sections
       const resourcesWithSections = (resources ?? []).map(resource => {
         const resourceSections = sectionsByResource[resource.id] ?? []
-        const totalWordCount = resourceSections.reduce((sum, s) => sum + (s.word_count ?? 0), 0)
+        const totalWordCount = resourceSections.reduce((sum: number, s: ResourceSection) => sum + (s.word_count ?? 0), 0)
 
         return {
           ...resource,

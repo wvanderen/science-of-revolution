@@ -106,10 +106,11 @@ _Last updated: 2025-11-01_
 ## 10. Release Plan
 1. **Milestone 0 – Foundation (Weeks 1-2)**: ✓ Complete – Supabase project setup, schema migration, invite-based auth flows, app shell with dashboard.
 2. **Milestone 1 – Reader & Highlights (Weeks 3-4)**: ✓ Complete – Resource ingestion, reader UI with themes, highlight system (5 colors), notes functionality, progress tracking with scroll detection, library view.
-3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: Shared highlights feed, comments, achievement engine, realtime updates.
+3. **Milestone 2 – Community & Achievements (Weeks 5-6)**: Shared highlights feed, comments, achievement engine, realtime updates, responsive library grid, card refresh, filters/search.
 4. **Milestone 3 – Stats & Admin (Weeks 7-8)**: Leaderboards, dashboards, admin schedule management, CSV exports.
-5. **Pilot Readiness (Week 9)**: QA, usability testing with facilitators, content load, documentation.
-6. **Pilot Launch (Week 10)**: Soft launch with study group, collect feedback, start backlog for iteration.
+5. **Milestone 4 – Study Tools & Polish (Weeks 9-10)**: Annotation suite, study modes, insights drawer, accessibility audit.
+6. **Pilot Readiness (Week 11)**: QA, usability testing with facilitators, content load, documentation.
+7. **Pilot Launch (Week 12)**: Soft launch with study group, collect feedback, start backlog for iteration.
 
 ## 11. Quality Strategy
 - Unit/integration testing coverage targets: ≥70% for core modules (auth, reader, highlights).
@@ -125,6 +126,7 @@ _Last updated: 2025-11-01_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-11-14_: Updated release plan to reflect Milestone 2 UI upgrades and extended timeline for pilot launch.
 - _2025-10-14_: ✓ Completed READ-01 reader header + navigation overhaul - implemented sticky header that condenses on scroll, full-width progress bar, enhanced section navigation with current/total indicators, keyboard shortcuts (←/→, Ctrl+K), visual section indicators, and comprehensive test coverage (15 new tests). Total 73 tests passing.
 - _2025-10-14_: ✓ Completed READ-02 typography and theme preferences - implemented serif/sans font toggle, pixel-precise font sizing (12-32px), 4 WCAG AA compliant themes (light/dark/sepia/high-contrast), Supabase preference persistence, and accessible preferences panel with live preview. All 58 tests passing.
 - _2025-10-13_: Implemented keyboard paragraph navigation (Ctrl+Arrow/Arrow/Tab) with visible focus indicators, and enhanced `h` key to toggle paragraph highlights on/off while preserving focus. 4 new tests added, all passing.

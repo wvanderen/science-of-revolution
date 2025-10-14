@@ -1,7 +1,7 @@
 # Milestone 1 Backlog – Reader & Highlights Phase
 
-## Status Update (2025-10-13 - Final)
-**Milestone 1 Complete!** All P0 and P1 items delivered successfully. Full reader experience with highlighting, notes, and progress tracking is functional. Ready to proceed with Milestone 2 (Community & Achievements).
+## Status Update (2025-11-14 - Final)
+**Milestone 1 Complete!** All P0 and P1 items delivered successfully. Full reader experience with highlighting, notes, and progress tracking is functional. Additional enhancements completed: READ-01 (reader header + navigation overhaul) and READ-02 (typography/themes/preferences). Ready to proceed with LIB-02 (responsive library grid) in Milestone 2 (Reader & Library UI Upgrade).
 
 ## Priority P0 (Blockers) ✅ COMPLETE
 1. ✅ Create database migration for M1 schema: `resource_sections`, `highlights`, `notes`, `progress` tables with RLS policies

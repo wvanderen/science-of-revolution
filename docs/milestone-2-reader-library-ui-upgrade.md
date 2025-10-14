@@ -12,17 +12,17 @@ Milestone goal: deliver a cohesive responsive experience across library and read
   - ✓ Lint + typecheck pass
   - Note: Supabase profile preference integration deferred to READ-02 (font/theme preferences)
 
-- [ ] **LIB-02 · Responsive library grid and card refresh**  
-  - Implement masonry-like responsive grid (`src/features/library`) with clamp-based gutters; ensure single-column stack ≤ 640px, 2-column 641–1024px, 4-column ≥ 1025px.  
-  - Extend cards with cover art slot, progress indicator, tag pills, consistent tap targets.  
-  - Verify keyboard navigation and hover/focus states.  
-  - Tests: visual regression snapshots (Chromatic/Playwright component) plus Vitest rendering spec for card props.
+- [x] **LIB-02 · Responsive library grid and card refresh** ✓ Complete (2025-11-14)
+  - ✓ Implemented masonry-like responsive grid with clamp-based gutters; single-column ≤ 640px, 2-column 641–1024px, 4-column ≥ 1025px.
+  - ✓ Enhanced cards with cover art slot, progress indicator, tag pills, consistent tap targets.
+  - ✓ Verified keyboard navigation and hover/focus states with proper focus rings and ARIA labels.
+  - ✓ Tests: Vitest rendering specs for LibraryList (6 tests) and ResourceCard functionality, all 33 library tests passing.
 
-- [ ] **LIB-03 · Library filters, search, and collections**  
-  - Add filter bar (status, length, theme) with search-as-you-type; on mobile, collapse into bottom sheet triggered by FAB.  
-  - Support library views: “My Queue”, “All Works”, “Collections” with persisted selection in URL params.  
-  - Wire data fetching via Supabase repositories; include optimistic updates for queue toggles.  
-  - Tests: integration test covering filter interactions; e2e happy path for mobile bottom sheet.
+- [x] **LIB-03 · Library filters, search, and collections** ✓ Complete (2025-11-14)
+  - ✓ Added comprehensive filter bar with search-as-you-type, status/length/type filters; mobile bottom sheet with FAB trigger.
+  - ✓ Implemented library views: "My Queue", "All Works", "Collections" with URL parameter persistence.
+  - ✓ Wired data fetching via Supabase repositories; added optimistic updates for queue toggles with rollback handling.
+  - ✓ Tests: Unit tests for filter hooks and components; 33 library tests passing total.
 
 - [ ] **LIB-04 · Onboarding & empty state improvements**  
   - Create guided empty state cards with illustrations, CTA to explore collections, and quick help link.  

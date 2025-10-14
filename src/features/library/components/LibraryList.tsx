@@ -23,7 +23,10 @@ export function LibraryList ({ resources }: LibraryListProps): JSX.Element {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+      style={{ gap: 'clamp(1rem, 2vw, 1.5rem)' }}
+    >
       {resources.map((resource) => (
         <ResourceCard
           key={resource.id}
