@@ -101,4 +101,33 @@ export class ProgressRepository {
   async markCompleted (userId: string, sectionId: string): Promise<Progress> {
     return await this.updateScrollPosition(userId, sectionId, 100)
   }
+
+  /**
+   * Mark section as in progress (not completed)
+   */
+  async markInProgress (userId: string, sectionId: string): Promise<Progress> {
+    const updates: ProgressUpdate = {
+      status: 'in_progress',
+      completed_at: null
+    }
+
+    const { data, error } = await this.supabase
+      .from('progress')
+      .upsert(
+        {
+          user_id: userId,
+          resource_section_id: sectionId,
+          scroll_percent: 0, // Reset to 0 when uncompleting
+          ...updates
+        },
+        {
+          onConflict: 'user_id,resource_section_id'
+        }
+      )
+      .select()
+      .single()
+
+    if (error != null) throw error
+    return data
+  }
 }

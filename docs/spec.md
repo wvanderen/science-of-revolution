@@ -49,7 +49,7 @@ _Last updated: 2025-11-01_
 
 ### 6.2 Reading Experience
 - FR-Read-1: Library lists curriculum resources with order, estimated reading time, and completion status.
-- FR-Read-2: Reader supports responsive typography, theme switching (light/dark/sepia), and jump navigation by section.
+- FR-Read-2: ✓ Reader supports responsive typography with serif/sans font families, pixel-precise font sizing (12-32px), theme switching (light/dark/sepia/high-contrast), sticky header with full-width progress bar, and enhanced section navigation. Preferences persist per user in Supabase profiles.
 - FR-Read-3: Offline cache keeps last-opened resource available with warning when stale.
 - FR-Read-4: ✓ Keyboard navigation mirrors Readwise Reader accessibility—Up/Down (or `Ctrl+↑/↓`) shifts focus one paragraph at a time, Tab advances between focused paragraphs, with visible focus styles (red/pink background with left border bar, theme-adaptive) and screen-reader announcements so the entire article is traversable without a mouse.
 
@@ -125,6 +125,8 @@ _Last updated: 2025-11-01_
 - **Outstanding Questions**: None for MVP scope at this time.
 
 ## 13. Change Log
+- _2025-10-14_: ✓ Completed READ-01 reader header + navigation overhaul - implemented sticky header that condenses on scroll, full-width progress bar, enhanced section navigation with current/total indicators, keyboard shortcuts (←/→, Ctrl+K), visual section indicators, and comprehensive test coverage (15 new tests). Total 73 tests passing.
+- _2025-10-14_: ✓ Completed READ-02 typography and theme preferences - implemented serif/sans font toggle, pixel-precise font sizing (12-32px), 4 WCAG AA compliant themes (light/dark/sepia/high-contrast), Supabase preference persistence, and accessible preferences panel with live preview. All 58 tests passing.
 - _2025-10-13_: Implemented keyboard paragraph navigation (Ctrl+Arrow/Arrow/Tab) with visible focus indicators, and enhanced `h` key to toggle paragraph highlights on/off while preserving focus. 4 new tests added, all passing.
 - _2025-11-01_: Document adds keyboard paragraph navigation requirement and records facilitator upload unblock via storage bucket/RLS migration.
 - _2025-10-14_: Highlight save shortcut (`h`) added, paragraph selections stabilized, context menu now shows note previews, inline indicators surface note presence, note editor supports `Ctrl+Enter`, toast feedback covers highlight/note actions, and facilitators gained an upload UI with article scraping + section preview.

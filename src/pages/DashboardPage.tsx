@@ -4,18 +4,20 @@ const DashboardPage = (): JSX.Element => {
   const { session } = useSession()
 
   return (
-    <section className="space-y-4">
-      <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-slate-300">Welcome back! We will surface your current assignment and streaks here.</p>
-      </header>
-      <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-6">
-        <p className="text-sm text-slate-300">
-          Session placeholder:
-          <span className="ml-2 font-mono text-slate-100">{session?.user?.email ?? 'anonymous'}</span>
-        </p>
-      </div>
-    </section>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <section className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-serif">Dashboard</h1>
+          <p className="text-foreground-muted mt-2">Welcome back! We will surface your current assignment and streaks here.</p>
+        </header>
+        <div className="card">
+          <p className="text-sm text-foreground-muted">
+            Session placeholder:
+            <span className="ml-2 font-mono text-foreground font-medium">{session?.user?.email ?? 'anonymous'}</span>
+          </p>
+        </div>
+      </section>
+    </div>
   )
 }
 

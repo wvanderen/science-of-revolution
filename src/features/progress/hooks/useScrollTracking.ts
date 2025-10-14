@@ -16,7 +16,7 @@ interface UseScrollTrackingResult {
  */
 export function useScrollTracking ({
   onScrollPercentChange,
-  debounceMs = 2000
+  debounceMs = 300
 }: UseScrollTrackingOptions): UseScrollTrackingResult {
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollPercentRef = useRef(0)
@@ -32,10 +32,14 @@ export function useScrollTracking ({
 
       // Calculate scroll percentage
       const scrollableHeight = scrollHeight - clientHeight
+
+      // If content fits in viewport, don't auto-mark as complete
       if (scrollableHeight <= 0) {
-        // Content fits in viewport, consider 100% scrolled
-        scrollPercentRef.current = 100
-        debouncedCallback(100)
+        const percent = 0 // Start at 0% for short content, let user complete manually
+        if (scrollPercentRef.current !== percent) {
+          scrollPercentRef.current = percent
+          debouncedCallback(percent)
+        }
         return
       }
 
@@ -45,6 +49,11 @@ export function useScrollTracking ({
       if (Math.abs(percent - scrollPercentRef.current) >= 1) {
         scrollPercentRef.current = percent
         debouncedCallback(percent)
+
+        // For major milestones, update immediately for better UX
+        if ([0, 25, 50, 75, 100].includes(percent)) {
+          onScrollPercentChange(percent)
+        }
       }
     }
 
@@ -57,7 +66,7 @@ export function useScrollTracking ({
     return () => {
       container.removeEventListener('scroll', handleScroll)
     }
-  }, [debouncedCallback])
+  }, [debouncedCallback, onScrollPercentChange])
 
   return { containerRef }
 }

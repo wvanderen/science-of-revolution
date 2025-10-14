@@ -159,6 +159,80 @@ export function parseHtmlToSections (html: string): ParsedSection[] {
 }
 
 /**
+ * Detect and convert headers in scraped content to markdown syntax
+ * Identifies patterns that look like headers and adds # or ## prefixes
+ * Uses conservative approach to avoid false positives
+ */
+export function detectAndConvertHeaders (text: string): string {
+  const lines = text.split('\n')
+  const convertedLines = lines.map(line => {
+    const trimmed = line.trim()
+
+    // Skip empty lines or already markdown headers
+    if (!trimmed || trimmed.startsWith('#')) {
+      return line
+    }
+
+    // Skip lines that are already HTML headers
+    if (trimmed.match(/^<h[1-6]/i)) {
+      return line
+    }
+
+    const lowerTrimmed = trimmed.toLowerCase()
+
+    // Detect potential headers based on common patterns:
+
+    // 1. All caps lines (likely section titles) - strong signal
+    if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 80) {
+      return `## ${trimmed}`
+    }
+
+    // 2. Lines with clear section/heading keywords - strong signal
+    // More specific matching to avoid false positives
+    const headingPatterns = [
+      /^\b(introduction|chapter|section|part|overview|summary|conclusion|background|methodology|results|discussion|abstract|foreword|preface|epilogue|appendix|index)\b/i,
+      /^\b(introducción|capítulo|sección|parte|resumen|conclusión)\b/i,
+      /\b(introduction|chapter|section|part)\s+\d+/i,
+      /\b(chapter|section|part)\s+[A-Z]/i,
+      /^(introduction|conclusion|summary|overview)[:]?\s*$/i,
+      /\b(this is the|here is the|the following) (introduction|chapter|section|part|overview|summary|conclusion|background|methodology|results|discussion|abstract|foreword|preface|epilogue|appendix|index)\b/i
+    ]
+
+    if (headingPatterns.some(pattern => pattern.test(trimmed))) {
+      // Use ## for subheadings, # for main headings
+      const isMainHeading = /^(this is the|here is the|the following)?\s*(introduction|conclusion|summary|overview)/i.test(trimmed)
+      return `${isMainHeading ? '#' : '##'} ${trimmed}`
+    }
+
+    // 3. Clear numbered section patterns - strong signal
+    // More specific patterns to avoid regular numbered lists
+    if (trimmed.match(/^(\w+\s+\d+[:.]|\d+\s+[A-Z][a-z]+\s+[:.]|(Chapter|Section|Part)\s+\d+[:.])/)) {
+      return `## ${trimmed}`
+    }
+
+    // 4. Very short, title-like lines - conservative approach
+    // Only convert if they meet ALL these strict criteria
+    const hasTitleCharacteristics =
+      trimmed.length >= 5 && // At least 5 characters
+      trimmed.length <= 25 && // No more than 25 characters
+      !trimmed.match(/[.!?,:]$/) && // No ending punctuation
+      !trimmed.match(/\s+(and|or|but|for|the|a|an|in|on|at|to|from|with|by|of|is|are|was|were|be|been|have|has|had|do|does|did|will|would|could|should|may|might|must|can|this|that|these|those|it|they|he|she|we|you|their|his|her|its|our|your)\s/i) && // No common words
+      !trimmed.match(/\b(also|always|never|often|sometimes|usually|first|second|third|finally|however|therefore|moreover|moreover|nevertheless|nonetheless|accordingly|consequently|thus|hence|meanwhile)\s/i) && // No adverbs/transitions
+      !trimmed.match(/^\d+\s/) && // Not starting with numbers
+      trimmed.charAt(0) === trimmed.charAt(0).toUpperCase() // Starts with capital letter
+
+    if (hasTitleCharacteristics) {
+      return `# ${trimmed}`
+    }
+
+    // Return original line if no header pattern detected
+    return line
+  })
+
+  return convertedLines.join('\n')
+}
+
+/**
  * Auto-detect format and parse content into sections
  */
 export function parseContentToSections (

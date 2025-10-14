@@ -55,6 +55,26 @@
   .sepia .text-foreground { color: #3e3522; }
   .sepia .text-foreground-muted { color: #6b6149; }
 
+  /* High-contrast theme overrides (WCAG AAA) */
+  .high-contrast {
+    --color-background: #000000;
+    --color-surface: #1a1a1a;
+    --color-border: #ffffff;
+    --color-foreground: #ffffff;
+    --color-foreground-muted: #e0e0e0;
+  }
+
+  .high-contrast body {
+    background-color: #000000;
+    color: #ffffff;
+  }
+
+  .high-contrast .bg-background { background-color: #000000; }
+  .high-contrast .bg-surface { background-color: #1a1a1a; }
+  .high-contrast .border-border { border-color: #ffffff; }
+  .high-contrast .text-foreground { color: #ffffff; }
+  .high-contrast .text-foreground-muted { color: #e0e0e0; }
+
   /* Focus visible styles for keyboard navigation (WCAG) */
   *:focus-visible {
     @apply outline-none ring-2 ring-primary ring-offset-2;
@@ -86,6 +106,10 @@
     @apply bg-surface text-foreground border border-border hover:bg-surface/80;
   }
 
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600;
+  }
+
   /* Input base */
   .input {
     @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm;
@@ -99,13 +123,23 @@
     @apply rounded-xl border border-border bg-surface p-6 shadow-sm;
   }
 
-  /* Reader container */
-  .reader-container {
-    @apply max-w-2xl mx-auto px-4 sm:px-6;
+  /* Reader content - centered with comfortable reading width */
+  .reader-content {
+    @apply font-serif text-reader-base leading-relaxed max-w-3xl mx-auto px-4 sm:px-6;
   }
 
+  /* Font family variants */
+  .font-family-serif .reader-content {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  }
+
+  .font-family-sans .reader-content {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  /* Dynamic font sizing using CSS variable */
   .reader-content {
-    @apply font-serif text-reader-base leading-relaxed;
+    font-size: var(--reader-font-size, 1.125rem);
   }
 
   .reader-paragraph {
@@ -133,6 +167,12 @@
   .sepia .reader-paragraph:focus {
     background-color: rgba(120, 53, 15, 0.12);
     box-shadow: -4px 0 0 0 rgba(120, 53, 15, 0.5);
+  }
+
+  /* High-contrast theme - focused paragraph */
+  .high-contrast .reader-paragraph:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: -4px 0 0 0 #ffffff;
   }
 
   .highlight-note-indicator {

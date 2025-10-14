@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from 'react'
-import { useReaderTheme, getReaderFontClass } from '../hooks/useReaderTheme'
+import { useReaderPreferences } from '../../preferences/hooks/useReaderPreferences'
 import { type Database } from '../../../lib/database.types'
 import { applyHighlightsToHTML } from '../../highlights/utils/renderHighlights'
 import { type HighlightWithNote } from '../../highlights/hooks/useHighlights'
@@ -17,14 +17,14 @@ interface ReaderContentProps {
  * Main reader content area with styled HTML content and highlights
  */
 export function ReaderContent ({ section, highlights = [], contentRef, onHighlightClick }: ReaderContentProps): JSX.Element {
-  const { fontSize } = useReaderTheme()
-  const fontClass = getReaderFontClass(fontSize)
+  const { preferences } = useReaderPreferences()
+  const { fontFamily, fontSize } = preferences
   const keyboardHelpId = `reader-keyboard-help-${section.id}`
 
   // Apply highlights to HTML content
   const highlightedHTML = useMemo(() => {
-    return applyHighlightsToHTML(section.content_html, highlights)
-  }, [section.content_html, highlights])
+    return applyHighlightsToHTML(section.content_html, highlights, preferences.theme)
+  }, [section.content_html, highlights, preferences.theme])
 
   // Handle clicks on highlights
   const handleContentClick = (e: React.MouseEvent): void => {
@@ -40,12 +40,27 @@ export function ReaderContent ({ section, highlights = [], contentRef, onHighlig
   }
 
   return (
-    <article className="reader-content max-w-3xl mx-auto px-4 py-8">
+    <article
+      className="reader-content max-w-3xl mx-auto px-4 py-8"
+      style={{
+        fontFamily: fontFamily === 'serif'
+          ? 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif'
+          : 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        fontSize: `${fontSize}px`
+      }}
+    >
       <header className="mb-8">
         <div className="text-sm text-foreground-muted mb-2">
           Section {section.order + 1}
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground font-serif">
+        <h1
+          className="text-3xl md:text-4xl font-bold text-foreground"
+          style={{
+            fontFamily: fontFamily === 'serif'
+              ? 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif'
+              : 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+          }}
+        >
           {section.title}
         </h1>
         {section.word_count > 0 && (
@@ -57,7 +72,13 @@ export function ReaderContent ({ section, highlights = [], contentRef, onHighlig
 
       <div
         ref={contentRef}
-        className={`prose prose-slate dark:prose-invert sepia:prose-stone max-w-none font-serif ${fontClass}`}
+        className="prose prose-slate dark:prose-invert sepia:prose-stone max-w-none"
+        style={{
+          fontFamily: fontFamily === 'serif'
+            ? 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif'
+            : 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          fontSize: `${fontSize}px`
+        }}
         dangerouslySetInnerHTML={{ __html: highlightedHTML }}
         onClick={handleContentClick}
         aria-describedby={keyboardHelpId}

@@ -1,4 +1,4 @@
-import { getHighlightColor } from './highlightColors'
+import { getHighlightColorForTheme } from './highlightColors'
 import { type HighlightWithNote } from '../hooks/useHighlights'
 
 /**
@@ -10,7 +10,7 @@ import { type HighlightWithNote } from '../hooks/useHighlights'
  * 3. Build new HTML with highlight spans inserted at correct positions
  * 4. Preserve original HTML structure where possible
  */
-export function applyHighlightsToHTML (htmlContent: string, highlights: HighlightWithNote[]): string {
+export function applyHighlightsToHTML (htmlContent: string, highlights: HighlightWithNote[], theme: string = 'light'): string {
   if (highlights.length === 0) {
     return htmlContent
   }
@@ -48,8 +48,15 @@ export function applyHighlightsToHTML (htmlContent: string, highlights: Highligh
   // Apply highlights to text nodes
   for (const highlight of sortedHighlights) {
     const { color, start_pos: startPos, end_pos: endPos } = highlight
-    const highlightColor = getHighlightColor(color)
-    const bgColor = highlightColor.bgHex
+    const bgColor = getHighlightColorForTheme(color, theme)
+
+    // Determine text color based on theme and background
+    let textColor = '#000000' // default black text
+    if (theme === 'dark') {
+      textColor = '#ffffff' // white text for dark themes
+    } else if (theme === 'high-contrast') {
+      textColor = '#ffffff' // white text for black background
+    }
 
     // Find text nodes that overlap with this highlight
     for (const { node, start, end } of textNodes) {
@@ -74,6 +81,7 @@ export function applyHighlightsToHTML (htmlContent: string, highlights: Highligh
       const highlightSpan = document.createElement('span')
       highlightSpan.className = 'highlight-marker cursor-pointer'
       highlightSpan.style.backgroundColor = bgColor
+      highlightSpan.style.color = textColor
       highlightSpan.style.padding = '2px 0'
       highlightSpan.style.borderRadius = '2px'
       highlightSpan.setAttribute('data-highlight-id', highlight.id)

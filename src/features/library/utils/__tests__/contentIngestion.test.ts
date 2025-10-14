@@ -3,7 +3,8 @@ import {
   countWords,
   parseMarkdownToSections,
   parseHtmlToSections,
-  markdownToHtml
+  markdownToHtml,
+  detectAndConvertHeaders
 } from '../contentIngestion'
 
 describe('contentIngestion', () => {
@@ -142,6 +143,124 @@ Five six`
       const sections = parseHtmlToSections(html)
 
       expect(sections[0].title).toBe('Bold Title')
+    })
+  })
+
+  describe('detectAndConvertHeaders', () => {
+    it('converts very short standalone lines to H1 headers', () => {
+      const text = `A Short Title
+
+Some content here
+
+Another Title
+
+More content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('# A Short Title')
+      expect(result).toContain('# Another Title')
+    })
+
+    it('does not convert short sentences that are not standalone', () => {
+      const text = `A short sentence here.
+Some content follows.
+Another short sentence here.
+More content.`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).not.toContain('# A short sentence here.')
+      expect(result).not.toContain('# Another short sentence here.')
+    })
+
+    it('converts ALL CAPS lines to H2 headers', () => {
+      const text = `INTRODUCTION
+Some intro content
+
+CHAPTER ONE
+Chapter content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('## INTRODUCTION')
+      expect(result).toContain('## CHAPTER ONE')
+    })
+
+    it('detects heading keywords', () => {
+      const text = `This is the introduction
+Content here
+
+Chapter 1: Getting Started
+More content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('# This is the introduction')
+      expect(result).toContain('## Chapter 1: Getting Started')
+    })
+
+    it('handles numbered sections', () => {
+      const text = `Chapter 1: Getting Started
+Content here
+
+Section 2. Advanced Topics
+More content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('## Chapter 1: Getting Started')
+      expect(result).toContain('## Section 2. Advanced Topics')
+    })
+
+    it('preserves existing markdown headers', () => {
+      const text = `# Existing Header
+Content here
+
+## Existing Subheader
+More content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('# Existing Header')
+      expect(result).toContain('## Existing Subheader')
+    })
+
+    it('preserves existing HTML headers', () => {
+      const text = `<h1>HTML Header</h1>
+Content here
+
+<h2>HTML Subheader</h2>
+More content`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).toContain('<h1>HTML Header</h1>')
+      expect(result).toContain('<h2>HTML Subheader</h2>')
+    })
+
+    it('ignores lines that are too long or common words', () => {
+      const text = `This is a very long line that should not be converted to a header because it exceeds the length limit
+The and or but for content here
+A label: this should not be a header
+1. numbered list item`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).not.toContain('# This is a very long line')
+      expect(result).not.toContain('# The and or but for')
+      expect(result).not.toContain('# A label:')
+      expect(result).not.toContain('## 1. numbered list item') // Should not convert simple numbered lists
+    })
+
+    it('handles empty content', () => {
+      const result = detectAndConvertHeaders('')
+      expect(result).toBe('')
+    })
+
+    it('does not convert normal paragraphs to headers even if short', () => {
+      const text = `Lenin stated that the October Revolution of 1917 could never have taken place without the previous experience of the Revolution of 1905. A study of this remarkable event is therefore of great importance for anyone who wishes to understand the dynamics of revolution in general, and not just in the particular case.
+
+In my book Bolshevism – the Road to Revolution, I wrote:
+
+The first Russian revolution unfolded on an epic scale, involving every layer of the proletariat and all other oppressed layers of society.`
+
+      const result = detectAndConvertHeaders(text)
+      expect(result).not.toContain('# Lenin stated that')
+      expect(result).not.toContain('# In my book')
+      expect(result).not.toContain('# The first Russian')
     })
   })
 })

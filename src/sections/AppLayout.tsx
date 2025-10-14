@@ -40,26 +40,39 @@ const AppLayout = (): JSX.Element => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-bold text-primary">
-            Science of Revolution
-          </Link>
-          <div className="flex items-center gap-3 text-sm text-slate-300">
-            <span>
-              Signed in as <span className="font-semibold">{session.user.email}</span>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3">
+          {/* Left: Brand + Navigation */}
+          <div className="flex items-center gap-6">
+            <Link to="/" className="text-xl font-bold text-primary hover:text-primary-hover transition-colors">
+              Science of Revolution
+            </Link>
+            <nav className="hidden md:flex items-center gap-1 text-sm">
+              <Link to="/library" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
+                Library
+              </Link>
+              <Link to="/" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
+                Dashboard
+              </Link>
+            </nav>
+          </div>
+
+          {/* Right: User menu */}
+          <div className="flex items-center gap-3 text-sm">
+            <span className="hidden sm:inline text-foreground-muted">
+              <span className="font-medium text-foreground">{session.user.email}</span>
             </span>
             <button
               onClick={() => { void handleSignOut() }}
-              className="rounded border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-800"
+              className="btn btn-secondary text-xs py-1.5 px-3"
             >
-              Log out
+              Sign out
             </button>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main>
         <Outlet />
       </main>
     </div>

@@ -49,6 +49,11 @@ export interface Database {
           primary_cohort_id: string | null
           avatar_url: string | null
           bio: string | null
+          reader_preferences: {
+            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
+            fontFamily?: 'serif' | 'sans'
+            fontSize?: number
+          }
           created_at: string
           updated_at: string
         }
@@ -59,6 +64,11 @@ export interface Database {
           primary_cohort_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          reader_preferences?: {
+            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
+            fontFamily?: 'serif' | 'sans'
+            fontSize?: number
+          }
           created_at?: string
           updated_at?: string
         }
@@ -69,6 +79,11 @@ export interface Database {
           primary_cohort_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          reader_preferences?: {
+            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
+            fontFamily?: 'serif' | 'sans'
+            fontSize?: number
+          }
           created_at?: string
           updated_at?: string
         }
@@ -170,6 +185,7 @@ export interface Database {
           title: string
           order: number
           content_html: string
+          content: string | null
           word_count: number
           created_at: string
           updated_at: string
@@ -180,6 +196,7 @@ export interface Database {
           title: string
           order: number
           content_html: string
+          content?: string | null
           word_count?: number
           created_at?: string
           updated_at?: string
@@ -190,6 +207,7 @@ export interface Database {
           title?: string
           order?: number
           content_html?: string
+          content?: string | null
           word_count?: number
           created_at?: string
           updated_at?: string

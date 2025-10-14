@@ -81,3 +81,35 @@ export function useMarkCompleted () {
     }
   })
 }
+
+/**
+ * Toggle completion status for a section
+ */
+export function useToggleCompleted () {
+  const supabase = useSupabase()
+  const { session } = useSession()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (params: {
+      sectionId: string
+      isCompleted: boolean
+    }): Promise<Progress> => {
+      if (session?.user == null) {
+        throw new Error('User must be authenticated to toggle progress')
+      }
+
+      const repository = new ProgressRepository(supabase)
+      if (params.isCompleted) {
+        return await repository.markCompleted(session.user.id, params.sectionId)
+      } else {
+        return await repository.markInProgress(session.user.id, params.sectionId)
+      }
+    },
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['progress', session?.user?.id, variables.sectionId]
+      })
+    }
+  })
+}

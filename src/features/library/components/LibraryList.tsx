@@ -1,10 +1,8 @@
 import { ResourceCard } from './ResourceCard'
-import { type Database } from '../../../lib/database.types'
-
-type Resource = Database['public']['Tables']['resources']['Row']
+import { type ResourceWithSections } from '../hooks/useResources'
 
 interface LibraryListProps {
-  resources: Resource[]
+  resources: ResourceWithSections[]
 }
 
 /**
@@ -30,6 +28,8 @@ export function LibraryList ({ resources }: LibraryListProps): JSX.Element {
         <ResourceCard
           key={resource.id}
           resource={resource}
+          sectionCount={resource.sectionCount}
+          totalWords={resource.totalWordCount}
         />
       ))}
     </div>

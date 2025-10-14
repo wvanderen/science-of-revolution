@@ -6,14 +6,16 @@ import { ReaderToolbar } from '../components/ReaderToolbar'
 import { ReaderContent } from '../components/ReaderContent'
 import { HighlightToolbar } from '../../highlights/components/HighlightToolbar'
 import { HighlightMenu } from '../../highlights/components/HighlightMenu'
-import { ProgressIndicator } from '../../progress/components/ProgressIndicator'
 import { useTextSelection } from '../../highlights/hooks/useTextSelection'
 import { useCreateHighlight, useHighlights, useDeleteHighlight, type HighlightWithNote } from '../../highlights/hooks/useHighlights'
 import { useToast } from '../../../components/providers/ToastProvider'
-import { useProgress, useUpdateProgress } from '../../progress/hooks/useProgress'
+import { useProgress, useUpdateProgress, useToggleCompleted } from '../../progress/hooks/useProgress'
 import { useScrollTracking } from '../../progress/hooks/useScrollTracking'
 import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
 import { useParagraphNavigation } from '../hooks/useParagraphNavigation'
+import { ReaderPreferencesPanel } from '../../preferences/components/ReaderPreferencesPanel'
+import { EditDocumentModal } from '../components/EditDocumentModal'
+import { useQueryClient } from '@tanstack/react-query'
 
 /**
  * Main reader page for viewing resource sections
@@ -24,6 +26,7 @@ export function ReaderPage (): JSX.Element {
   const navigate = useNavigate()
   const { data: resource, isLoading, error } = useResource(resourceId)
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
 
   // Get section ID from URL query params
   const searchParams = new URLSearchParams(window.location.search)
@@ -35,6 +38,11 @@ export function ReaderPage (): JSX.Element {
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null)
   const [noteHighlightId, setNoteHighlightId] = useState<string | null>(null)
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
+  const [isEditDocumentOpen, setIsEditDocumentOpen] = useState(false)
+
+  // Local scroll progress for immediate UI feedback
+  const [localScrollPercent, setLocalScrollPercent] = useState(0)
 
   // Text selection for highlighting
   const { selection, clearSelection, containerRef } = useTextSelection()
@@ -49,14 +57,19 @@ export function ReaderPage (): JSX.Element {
   // Progress tracking
   const { data: progress } = useProgress(currentSectionId ?? undefined)
   const updateProgress = useUpdateProgress()
+  const toggleCompleted = useToggleCompleted()
 
   // Scroll tracking
   const { containerRef: scrollContainerRef } = useScrollTracking({
     onScrollPercentChange: (percent) => {
+      // Update local state immediately for responsive UI
+      setLocalScrollPercent(percent)
+
       if (currentSectionId != null) {
         updateProgress.mutate({ sectionId: currentSectionId, scrollPercent: percent })
       }
-    }
+    },
+    debounceMs: 200
   })
 
   // Initialize current section when resource loads
@@ -72,6 +85,11 @@ export function ReaderPage (): JSX.Element {
       }
     }
   }, [resource, urlSectionId])
+
+  // Reset local scroll percent when section changes
+  useEffect(() => {
+    setLocalScrollPercent(progress?.scroll_percent ?? 0)
+  }, [currentSectionId, progress?.scroll_percent])
 
   // Update URL when section changes
   const handleSectionChange = (sectionId: string): void => {
@@ -145,6 +163,38 @@ export function ReaderPage (): JSX.Element {
 
   const handleCloseNoteEditor = (): void => {
     setNoteHighlightId(null)
+  }
+
+  const handleOpenPreferences = (): void => {
+    setIsPreferencesOpen(true)
+  }
+
+  const handleClosePreferences = (): void => {
+    setIsPreferencesOpen(false)
+  }
+
+  const handleToggleCompleted = (): void => {
+    if (currentSectionId == null) return
+
+    const isCompleted = progress?.status === 'completed'
+    toggleCompleted.mutate({
+      sectionId: currentSectionId,
+      isCompleted: !isCompleted
+    })
+  }
+
+  const handleOpenEditDocument = (): void => {
+    setIsEditDocumentOpen(true)
+  }
+
+  const handleCloseEditDocument = (): void => {
+    setIsEditDocumentOpen(false)
+  }
+
+  const handleSaveDocument = (): void => {
+    // Invalidate and refetch resource data to show updated content
+    queryClient.invalidateQueries({ queryKey: ['resource', resourceId] })
+    queryClient.invalidateQueries({ queryKey: ['resources'] })
   }
 
   useEffect(() => {
@@ -298,18 +348,30 @@ export function ReaderPage (): JSX.Element {
     )
   }
 
+  // Combine database progress with local scroll percent for immediate UI feedback
+  const displayProgress = progress ? {
+    ...progress,
+    scroll_percent: localScrollPercent
+  } : null
+
   return (
     <ReaderLayout>
+      {/* Fixed header that stays at top */}
       <ReaderToolbar
         sections={resource.sections}
         currentSectionId={currentSectionId}
         onSectionSelect={handleSectionChange}
         onClose={handleClose}
+        progress={displayProgress}
+        onOpenPreferences={handleOpenPreferences}
+        onToggleCompleted={handleToggleCompleted}
+        onEditDocument={handleOpenEditDocument}
       />
 
+      {/* Scrollable content area */}
       <div
         ref={scrollContainerRef}
-        className="overflow-y-auto h-screen pb-20"
+        className="flex-1 min-h-0 overflow-y-auto pt-16"
       >
         <ReaderContent
           section={currentSection}
@@ -320,13 +382,6 @@ export function ReaderPage (): JSX.Element {
 
         <div aria-live="polite" aria-atomic="true" className="sr-only">
           {paragraphAnnouncement}
-        </div>
-
-        {/* Progress indicator - fixed to bottom */}
-        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4">
-          <div className="max-w-3xl mx-auto">
-            <ProgressIndicator progress={progress} />
-          </div>
         </div>
       </div>
 
@@ -354,6 +409,21 @@ export function ReaderPage (): JSX.Element {
           onClose={handleCloseNoteEditor}
         />
       )}
+
+      {/* Reader preferences panel */}
+      <ReaderPreferencesPanel
+        isOpen={isPreferencesOpen}
+        onClose={handleClosePreferences}
+      />
+
+      {/* Edit document modal (facilitators only) */}
+      <EditDocumentModal
+        resourceId={resourceId!}
+        sections={resource.sections}
+        isOpen={isEditDocumentOpen}
+        onClose={handleCloseEditDocument}
+        onSave={handleSaveDocument}
+      />
     </ReaderLayout>
   )
 }

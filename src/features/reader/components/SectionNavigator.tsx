@@ -9,7 +9,7 @@ interface SectionNavigatorProps {
 }
 
 /**
- * Section navigation dropdown for jumping between sections
+ * Enhanced section navigation dropdown for jumping between sections
  */
 export function SectionNavigator ({
   sections,
@@ -17,19 +17,29 @@ export function SectionNavigator ({
   onSectionSelect
 }: SectionNavigatorProps): JSX.Element {
   if (sections.length === 0) {
-    return <div className="text-sm text-foreground-muted">No sections available</div>
+    return (
+      <div className="text-foreground-muted text-sm">
+        No sections
+      </div>
+    )
   }
+
+  const currentSection = sections.find(s => s.id === currentSectionId)
+  const currentIndex = currentSection ? currentSection.order : 0
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="section-select" className="text-sm font-medium text-foreground">
-        Section:
-      </label>
+      {/* Section indicator */}
+      <span className="font-medium text-foreground text-sm">
+        {currentIndex + 1}/{sections.length}
+      </span>
+
+      {/* Dropdown */}
       <select
         id="section-select"
         value={currentSectionId ?? ''}
         onChange={(e) => { onSectionSelect(e.target.value) }}
-        className="input py-1 px-2 text-sm max-w-xs"
+        className="input py-1.5 px-3 text-sm max-w-xs"
       >
         {sections.map((section) => (
           <option key={section.id} value={section.id}>
@@ -37,6 +47,11 @@ export function SectionNavigator ({
           </option>
         ))}
       </select>
+
+      {/* Navigation hint */}
+      <div className="text-xs text-foreground-muted">
+        Use ← → keys
+      </div>
     </div>
   )
 }

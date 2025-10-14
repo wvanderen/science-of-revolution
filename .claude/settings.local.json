@@ -10,7 +10,8 @@
       "Bash(npm run ci:*)",
       "Bash(npm run build)",
       "Bash(tree:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { parseContentToSections, type ParsedSection } from '../utils/contentIngestion'
+import { parseContentToSections, detectAndConvertHeaders, type ParsedSection } from '../utils/contentIngestion'
 import { useIngestResource } from '../hooks/useIngestResource'
 import { useSupabase } from '../../../components/providers/SupabaseProvider'
 import { useToast } from '../../../components/providers/ToastProvider'
@@ -30,6 +30,7 @@ function slugify (value: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
+
 
 function getFileMeta (
   format: 'auto' | 'markdown' | 'html',
@@ -111,7 +112,10 @@ export function ResourceUploadPage (): JSX.Element {
         return
       }
 
-      const markdown = articleText
+      // Apply header detection and conversion
+      const textWithHeaders = detectAndConvertHeaders(articleText)
+
+      const markdown = textWithHeaders
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
@@ -120,7 +124,7 @@ export function ResourceUploadPage (): JSX.Element {
       setContent(markdown)
       setPreviewGenerated(false)
       setForm(prev => ({ ...prev, format: 'markdown' }))
-      showToast('Article content fetched. Review before uploading.', { type: 'success' })
+      showToast('Article content fetched with automatic header detection. Review before uploading.', { type: 'success' })
     } catch (error) {
       console.error('Failed to fetch article', error)
       showToast('Could not fetch article automatically. Paste content manually instead.', { type: 'error' })

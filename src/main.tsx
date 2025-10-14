@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AppRoutes from './routes/AppRoutes'
 import SupabaseProvider from './components/providers/SupabaseProvider'
 import { ToastProvider } from './components/providers/ToastProvider'
+import { PreferencesProvider } from './features/preferences/components/PreferencesProvider'
 import './styles/index.css'
 
 const queryClient = new QueryClient()
@@ -18,11 +19,13 @@ ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <SupabaseProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ToastProvider>
-            <AppRoutes />
-          </ToastProvider>
-        </BrowserRouter>
+        <PreferencesProvider>
+          <BrowserRouter>
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
+          </BrowserRouter>
+        </PreferencesProvider>
       </QueryClientProvider>
     </SupabaseProvider>
   </React.StrictMode>

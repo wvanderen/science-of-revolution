@@ -195,10 +195,94 @@ document.documentElement.classList.toggle('dark')
 document.documentElement.classList.toggle('sepia')
 ```
 
+## Programmatic Token Access
+
+The design system now includes programmatic access to tokens via `src/styles/tokens.ts`. This allows you to use design tokens directly in TypeScript/JavaScript code:
+
+### Importing Tokens
+
+```typescript
+import {
+  colors,
+  spacing,
+  borderRadius,
+  zIndex,
+  getColor,
+  getSpacing,
+  getBorderRadius,
+  getZIndex,
+  type SpacingKey,
+  type BorderRadiusKey
+} from '@/styles/tokens'
+```
+
+### Using Helper Functions
+
+```typescript
+// Get color by path
+const primaryColor = getColor('primary.DEFAULT') // '#b91c1c'
+const darkBg = getColor('background.dark') // '#0f172a'
+
+// Get spacing value
+const padding = getSpacing(4) // '1rem'
+const customSpacing = getSpacing(18) // '4.5rem'
+
+// Get border radius
+const radius = getBorderRadius('md') // '0.5rem'
+
+// Get z-index
+const modalZ = getZIndex('modal') // '50'
+```
+
+### Type Safety
+
+All token helpers are fully typed:
+
+```typescript
+import type { SpacingKey, BorderRadiusKey } from '@/styles/tokens'
+
+const spacing: SpacingKey = 4 // ✓ Valid
+const spacing: SpacingKey = 999 // ✗ TypeScript error
+
+const radius: BorderRadiusKey = 'lg' // ✓ Valid
+const radius: BorderRadiusKey = 'huge' // ✗ TypeScript error
+```
+
+### Direct Access
+
+You can also access tokens directly:
+
+```typescript
+import { colors, spacing } from '@/styles/tokens'
+
+const styles = {
+  backgroundColor: colors.primary.DEFAULT,
+  padding: spacing[4],
+}
+```
+
+### Testing
+
+Comprehensive unit tests are available in `src/styles/__tests__/tokens.test.ts`. Run them with:
+
+```bash
+npm test -- src/styles/__tests__/tokens.test.ts
+```
+
 ## Customization
-To add new tokens, edit `tailwind.config.ts` in the `theme.extend` section. Always maintain WCAG AA contrast ratios and test across all themes.
+To add new tokens:
+
+1. **Update `src/styles/tokens.ts`** with new token definitions
+2. **Export from Tailwind config** (if needed for utility classes)
+3. **Add tests** in `src/styles/__tests__/tokens.test.ts`
+4. **Update this documentation**
+
+Always maintain WCAG AA contrast ratios and test across all themes.
 
 ## Resources
+- **Token definitions**: `src/styles/tokens.ts`
+- **Tailwind integration**: `tailwind.config.ts`
+- **Tests**: `src/styles/__tests__/tokens.test.ts`
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
 - [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)

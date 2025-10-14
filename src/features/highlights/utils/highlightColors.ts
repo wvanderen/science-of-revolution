@@ -1,51 +1,76 @@
 /**
- * Highlight color palette matching design tokens
- * All colors meet WCAG AA contrast ratios with black text
+ * Theme-aware highlight color palette
+ * Colors adapt to current theme for optimal contrast and readability
  */
 
 export interface HighlightColor {
   id: string
   name: string
-  bgClass: string
-  bgHex: string
   label: string
+  // Theme-specific colors
+  themes: {
+    light: string
+    dark: string
+    sepia: string
+    highContrast: string
+  }
 }
 
 export const HIGHLIGHT_COLORS: HighlightColor[] = [
   {
     id: 'yellow',
     name: 'Yellow',
-    bgClass: 'bg-amber-100',
-    bgHex: '#fef3c7',
-    label: 'General highlight'
+    label: 'General highlight',
+    themes: {
+      light: '#fef3c7',      // amber-100
+      dark: '#78350f',       // amber-900
+      sepia: '#f59e0b',     // amber-500
+      highContrast: '#000000'
+    }
   },
   {
     id: 'green',
     name: 'Green',
-    bgClass: 'bg-emerald-100',
-    bgHex: '#d1fae5',
-    label: 'Important concept'
+    label: 'Important concept',
+    themes: {
+      light: '#d1fae5',      // emerald-100
+      dark: '#064e3b',       // emerald-900
+      sepia: '#059669',      // emerald-600
+      highContrast: '#000000'
+    }
   },
   {
     id: 'blue',
     name: 'Blue',
-    bgClass: 'bg-blue-100',
-    bgHex: '#dbeafe',
-    label: 'Definition'
+    label: 'Definition',
+    themes: {
+      light: '#dbeafe',      // blue-100
+      dark: '#1e3a8a',       // blue-900
+      sepia: '#2563eb',      // blue-600
+      highContrast: '#000000'
+    }
   },
   {
     id: 'pink',
     name: 'Pink',
-    bgClass: 'bg-pink-100',
-    bgHex: '#fce7f3',
-    label: 'Review item'
+    label: 'Review item',
+    themes: {
+      light: '#fce7f3',      // pink-100
+      dark: '#831843',       // pink-900
+      sepia: '#db2777',      // pink-600
+      highContrast: '#000000'
+    }
   },
   {
     id: 'orange',
     name: 'Orange',
-    bgClass: 'bg-orange-100',
-    bgHex: '#fed7aa',
-    label: 'Question'
+    label: 'Question',
+    themes: {
+      light: '#fed7aa',      // orange-100
+      dark: '#7c2d12',       // orange-900
+      sepia: '#ea580c',      // orange-600
+      highContrast: '#000000'
+    }
   }
 ]
 
@@ -53,6 +78,30 @@ export function getHighlightColor (colorId: string): HighlightColor {
   return HIGHLIGHT_COLORS.find(c => c.id === colorId) ?? HIGHLIGHT_COLORS[0]
 }
 
-export function getHighlightBgClass (colorId: string): string {
-  return getHighlightColor(colorId).bgClass
+/**
+ * Get highlight color for current theme
+ */
+export function getHighlightColorForTheme (colorId: string, theme: string): string {
+  const color = getHighlightColor(colorId)
+
+  switch (theme) {
+    case 'dark':
+      return color.themes.dark
+    case 'sepia':
+      return color.themes.sepia
+    case 'high-contrast':
+      return color.themes.highContrast
+    default:
+      return color.themes.light
+  }
+}
+
+/**
+ * Get all available highlight colors for current theme
+ */
+export function getHighlightColorsForTheme (theme: string): Array<HighlightColor & { bgHex: string }> {
+  return HIGHLIGHT_COLORS.map(color => ({
+    ...color,
+    bgHex: getHighlightColorForTheme(color.id, theme)
+  }))
 }

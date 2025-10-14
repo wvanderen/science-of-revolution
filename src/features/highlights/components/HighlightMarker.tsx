@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
-import { getHighlightBgClass } from '../utils/highlightColors'
+import { getHighlightColorForTheme } from '../utils/highlightColors'
+import { useReaderPreferences } from '../../preferences/hooks/useReaderPreferences'
 import { type Database } from '../../../lib/database.types'
 
 type Highlight = Database['public']['Tables']['highlights']['Row']
@@ -18,11 +19,19 @@ export function HighlightMarker ({
   children,
   onClick
 }: HighlightMarkerProps): JSX.Element {
-  const bgClass = getHighlightBgClass(highlight.color)
+  const { preferences } = useReaderPreferences()
+  const bgColor = getHighlightColorForTheme(highlight.color, preferences.theme || 'light')
+
+  // Determine text color based on theme
+  let textColorClass = 'text-black'
+  if (preferences.theme === 'dark' || preferences.theme === 'high-contrast') {
+    textColorClass = 'text-white'
+  }
 
   return (
     <mark
-      className={`${bgClass} cursor-pointer rounded px-0.5 transition-opacity hover:opacity-80`}
+      className={`cursor-pointer rounded px-0.5 transition-opacity hover:opacity-80 ${textColorClass}`}
+      style={{ backgroundColor: bgColor }}
       onClick={onClick}
       data-highlight-id={highlight.id}
       title={`Highlighted: ${highlight.text_content.substring(0, 50)}...`}

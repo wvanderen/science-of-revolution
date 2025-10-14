@@ -5,11 +5,11 @@ interface ReaderLayoutProps {
 }
 
 /**
- * Full-screen reader layout container
+ * Full-screen reader layout container with proper scrolling behavior
  */
 export function ReaderLayout ({ children }: ReaderLayoutProps): JSX.Element {
   return (
-    <div className="reader-container min-h-screen bg-background text-foreground">
+    <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col">
       {children}
     </div>
   )

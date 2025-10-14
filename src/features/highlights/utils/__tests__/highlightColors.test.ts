@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   HIGHLIGHT_COLORS,
   getHighlightColor,
-  getHighlightBgClass
+  getHighlightColorForTheme,
+  getHighlightColorsForTheme
 } from '../highlightColors'
 
 describe('highlightColors', () => {
@@ -21,9 +22,12 @@ describe('highlightColors', () => {
       HIGHLIGHT_COLORS.forEach(color => {
         expect(color).toHaveProperty('id')
         expect(color).toHaveProperty('name')
-        expect(color).toHaveProperty('bgClass')
-        expect(color).toHaveProperty('bgHex')
         expect(color).toHaveProperty('label')
+        expect(color).toHaveProperty('themes')
+        expect(color.themes).toHaveProperty('light')
+        expect(color.themes).toHaveProperty('dark')
+        expect(color.themes).toHaveProperty('sepia')
+        expect(color.themes).toHaveProperty('highContrast')
       })
     })
 
@@ -53,20 +57,42 @@ describe('highlightColors', () => {
     })
   })
 
-  describe('getHighlightBgClass', () => {
-    it('returns correct Tailwind class for yellow', () => {
-      const bgClass = getHighlightBgClass('yellow')
-      expect(bgClass).toBe('bg-amber-100')
+  describe('getHighlightColorForTheme', () => {
+    it('returns light theme color by default', () => {
+      const color = getHighlightColorForTheme('yellow', 'invalid-theme')
+      expect(color).toBe('#fef3c7')
     })
 
-    it('returns correct Tailwind class for green', () => {
-      const bgClass = getHighlightBgClass('green')
-      expect(bgClass).toBe('bg-emerald-100')
+    it('returns correct colors for each theme', () => {
+      expect(getHighlightColorForTheme('yellow', 'light')).toBe('#fef3c7')
+      expect(getHighlightColorForTheme('yellow', 'dark')).toBe('#78350f')
+      expect(getHighlightColorForTheme('yellow', 'sepia')).toBe('#f59e0b')
+      expect(getHighlightColorForTheme('yellow', 'high-contrast')).toBe('#000000')
     })
 
-    it('returns default class for invalid color', () => {
-      const bgClass = getHighlightBgClass('invalid')
-      expect(bgClass).toBe('bg-amber-100')
+    it('returns dark colors that are different from light', () => {
+      const lightColor = getHighlightColorForTheme('yellow', 'light')
+      const darkColor = getHighlightColorForTheme('yellow', 'dark')
+      expect(lightColor).not.toBe(darkColor)
+    })
+  })
+
+  describe('getHighlightColorsForTheme', () => {
+    it('returns colors with bgHex property for theme', () => {
+      const themeColors = getHighlightColorsForTheme('dark')
+      expect(themeColors.length).toBe(HIGHLIGHT_COLORS.length)
+
+      themeColors.forEach(color => {
+        expect(color).toHaveProperty('bgHex')
+        expect(typeof color.bgHex).toBe('string')
+      })
+    })
+
+    it('returns different colors for different themes', () => {
+      const lightColors = getHighlightColorsForTheme('light')
+      const darkColors = getHighlightColorsForTheme('dark')
+
+      expect(lightColors[0].bgHex).not.toBe(darkColors[0].bgHex)
     })
   })
 })
