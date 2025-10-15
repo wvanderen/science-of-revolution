@@ -17,11 +17,12 @@ export interface CreatePlanData {
 
 export interface UpdatePlanData {
   title?: string
-  description?: string
+  description?: string | null
   isPublished?: boolean
   estimatedWeeks?: number
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
-  tags?: string[]
+  tags?: string[] | null
+  cohortId?: string | null
 }
 
 export interface PlanFilters {
@@ -213,6 +214,7 @@ export class EducationPlanRepository {
     if (planInput.estimatedWeeks != null) updateData.estimated_weeks = planInput.estimatedWeeks
     if (planInput.difficultyLevel != null) updateData.difficulty_level = planInput.difficultyLevel
     if (planInput.tags !== undefined) updateData.tags = planInput.tags
+    if (planInput.cohortId !== undefined) updateData.cohort_id = planInput.cohortId
 
     const { data: updatedPlan, error } = await this.supabase
       .from('education_plans')

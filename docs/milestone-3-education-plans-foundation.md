@@ -199,11 +199,13 @@ interface EducationPlanAPI {
 ## Definition of Done
 
 ### Core Functionality
-- [ ] Facilitators can create complete education plans with topics and readings
-- [ ] Plans can be assigned to specific cohorts and published
-- [ ] Learners can discover and enroll in available plans
-- [ ] Plan structure is clearly visualized with progress tracking
-- [ ] All CRUD operations work with proper error handling
+- [x] Facilitators can create complete education plans with topics and readings
+- [x] Plans can be assigned to specific cohorts and published
+- [x] Learners can discover and enroll in available plans
+- [x] Plan structure is clearly visualized with progress tracking
+- [x] All CRUD operations work with proper error handling
+
+**Status Update (Oct 15, 2025)**: Core functionality complete. See [milestone-3-progress-update.md](./milestone-3-progress-update.md) for details.
 
 ### Quality Assurance
 - [ ] Unit tests for all repositories and hooks (>70% coverage)

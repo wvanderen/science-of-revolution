@@ -14,7 +14,8 @@ import { useAnalytics } from '../../../lib/analytics'
 
 interface TopicManagerProps {
   planId: string
-  onTopicSelect?: (topicId: string) => void
+  selectedTopicId?: string | null
+  onTopicSelect?: (topicId: string | null) => void
 }
 
 interface TopicFormData {
@@ -28,7 +29,7 @@ interface TopicFormData {
  * Topic management interface for facilitators
  * Allows creating, editing, reordering, and deleting topics
  */
-export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.Element {
+export function TopicManager({ planId, selectedTopicId, onTopicSelect }: TopicManagerProps): JSX.Element {
   const { data: topics, isLoading } = usePlanTopics(planId)
   const createTopic = useCreateTopic()
   const updateTopic = useUpdateTopic()
@@ -49,7 +50,7 @@ export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.
     if (!formData.title.trim()) return
 
     try {
-      await createTopic.mutateAsync({
+      const newTopic = await createTopic.mutateAsync({
         educationPlanId: planId,
         title: formData.title,
         description: formData.description || undefined,
@@ -64,6 +65,10 @@ export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.
         isRequired: true
       })
       setShowAddForm(false)
+
+      if (newTopic?.id) {
+        onTopicSelect?.(newTopic.id)
+      }
 
       trackInteraction('topic_manager', 'topic_created', { planId })
     } catch (error) {
@@ -106,6 +111,9 @@ export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.
 
     try {
       await deleteTopic.mutateAsync(topicId)
+      if (selectedTopicId === topicId) {
+        onTopicSelect?.(null)
+      }
       trackInteraction('topic_manager', 'topic_deleted', { topicId, planId })
     } catch (error) {
       console.error('Failed to delete topic:', error)
@@ -120,6 +128,7 @@ export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.
       estimatedHours: topic.estimated_hours || 1,
       isRequired: topic.is_required
     })
+    onTopicSelect?.(topic.id)
   }
 
   const handleCancelEdit = () => {
@@ -241,120 +250,135 @@ export function TopicManager({ planId, onTopicSelect }: TopicManagerProps): JSX.
                 >
                   {sortedTopics.map((topic, index) => (
                     <Draggable key={topic.id} draggableId={topic.id} index={index}>
-                      {(dragProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                        <div
-                          ref={dragProvided.innerRef}
-                          {...dragProvided.draggableProps}
-                          className={`
-                          bg-card border border-border rounded-lg transition-shadow
-                          ${snapshot.isDragging ? 'shadow-lg' : ''}
-                        `}
-                      >
-                        {editingTopicId === topic.id ? (
-                          <div className="p-6">
-                            <h3 className="font-medium text-foreground mb-4">Edit Topic</h3>
-                            <TopicForm
-                              formData={formData}
-                              onChange={setFormData}
-                              onSubmit={() => handleUpdateTopic(topic.id)}
-                              onCancel={handleCancelEdit}
-                              isSubmitting={updateTopic.isPending}
-                              submitLabel="Save Changes"
-                            />
-                          </div>
-                        ) : (
-                          <div className="p-6">
-                            <div className="flex items-start space-x-4">
-                              {/* Drag Handle */}
-                              <div
-                                {...dragProvided.dragHandleProps}
-                                className="mt-1 cursor-move text-muted-foreground hover:text-foreground"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                  />
-                                </svg>
-                              </div>
+                      {(dragProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => {
+                        const isSelected = selectedTopicId === topic.id
 
-                              {/* Topic Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
-                                  <h3 className="font-semibold text-foreground">{topic.title}</h3>
-                                  {topic.is_required && (
-                                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">
-                                      Required
-                                    </span>
-                                  )}
+                        return (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            onClick={() => onTopicSelect?.(topic.id)}
+                            className={`
+                              bg-card border border-border rounded-lg transition-shadow cursor-pointer
+                              ${snapshot.isDragging ? 'shadow-lg' : ''}
+                              ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
+                            `}
+                          >
+                            {editingTopicId === topic.id ? (
+                              <div className="p-6">
+                                <h3 className="font-medium text-foreground mb-4">Edit Topic</h3>
+                                <TopicForm
+                                  formData={formData}
+                                  onChange={setFormData}
+                                  onSubmit={() => handleUpdateTopic(topic.id)}
+                                  onCancel={handleCancelEdit}
+                                  isSubmitting={updateTopic.isPending}
+                                  submitLabel="Save Changes"
+                                />
+                              </div>
+                            ) : (
+                              <div className="p-6">
+                                <div className="flex items-start space-x-4">
+                                  {/* Drag Handle */}
+                                  <div
+                                    {...dragProvided.dragHandleProps}
+                                    className="mt-1 cursor-move text-muted-foreground hover:text-foreground"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 6h16M4 12h16M4 18h16"
+                                      />
+                                    </svg>
+                                  </div>
+
+                                  {/* Topic Content */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                                      <h3 className="font-semibold text-foreground">{topic.title}</h3>
+                                      {topic.is_required && (
+                                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">
+                                          Required
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {topic.description && (
+                                      <p className="text-sm text-muted-foreground mb-3">{topic.description}</p>
+                                    )}
+
+                                    <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                                      {topic.estimated_hours && (
+                                        <span>{topic.estimated_hours}h estimated</span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        onTopicSelect?.(topic.id)
+                                      }}
+                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
+                                      title="Manage readings"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                        />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        handleStartEdit(topic)
+                                      }}
+                                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
+                                      title="Edit topic"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        handleDeleteTopic(topic.id)
+                                      }}
+                                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                                      title="Delete topic"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
-
-                                {topic.description && (
-                                  <p className="text-sm text-muted-foreground mb-3">{topic.description}</p>
-                                )}
-
-                                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                                  {topic.estimated_hours && (
-                                    <span>{topic.estimated_hours}h estimated</span>
-                                  )}
-                                </div>
                               </div>
-
-                              {/* Actions */}
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => onTopicSelect?.(topic.id)}
-                                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
-                                  title="Manage readings"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handleStartEdit(topic)}
-                                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
-                                  title="Edit topic"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteTopic(topic.id)}
-                                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                                  title="Delete topic"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
+                        )
+                      }}
+                    </Draggable>
+                  ))}
                 {provided.placeholder}
               </div>
             )}

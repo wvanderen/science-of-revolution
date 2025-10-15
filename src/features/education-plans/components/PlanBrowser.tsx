@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useEducationPlans } from '../hooks/useEducationPlans'
+import { useMemo } from 'react'
 import { PlanCard } from './PlanCard'
 import { useAnalytics } from '../../../lib/analytics'
 
 interface PlanBrowserProps {
   onPlanSelect?: (planId: string) => void
+  onPlanManage?: (planId: string) => void
+  currentUserId?: string
+  isFacilitator?: boolean
+  userCohortIds?: string[]
   showEnrolledOnly?: boolean
 }
 
@@ -18,9 +23,17 @@ interface PlanBrowserFilters {
 /**
  * Browse and discover education plans
  */
-export function PlanBrowser({ onPlanSelect, showEnrolledOnly: _showEnrolledOnly = false }: PlanBrowserProps): JSX.Element {
+export function PlanBrowser({
+  onPlanSelect,
+  onPlanManage,
+  currentUserId,
+  isFacilitator = false,
+  userCohortIds,
+  showEnrolledOnly: _showEnrolledOnly = false
+}: PlanBrowserProps): JSX.Element {
   const { data: allPlans, isLoading } = useEducationPlans()
   const { trackInteraction } = useAnalytics()
+  const userCohortIdSet = useMemo(() => new Set(userCohortIds ?? []), [userCohortIds])
 
   const [filters, setFilters] = useState<PlanBrowserFilters>({
     search: '',
@@ -150,7 +163,7 @@ export function PlanBrowser({ onPlanSelect, showEnrolledOnly: _showEnrolledOnly 
             <select
               id="difficulty"
               value={filters.difficultyLevel}
-              onChange={(e) => handleFilterChange('difficultyLevel', e.target.value)}
+              onChange={(e) => handleFilterChange('difficultyLevel', e.target.value as PlanBrowserFilters['difficultyLevel'])}
               className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="">All levels</option>
@@ -168,7 +181,7 @@ export function PlanBrowser({ onPlanSelect, showEnrolledOnly: _showEnrolledOnly 
             <select
               id="sort"
               value={filters.sortBy}
-              onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+              onChange={(e) => handleFilterChange('sortBy', e.target.value as PlanBrowserFilters['sortBy'])}
               className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="recent">Most recent</option>
@@ -265,13 +278,22 @@ export function PlanBrowser({ onPlanSelect, showEnrolledOnly: _showEnrolledOnly 
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedPlans.map((plan) => (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              onClick={() => handlePlanClick(plan.id)}
-            />
-          ))}
+          {sortedPlans.map((plan) => {
+            const canManage = Boolean(onPlanManage) && (
+              (currentUserId != null && plan.created_by === currentUserId) ||
+              (isFacilitator === true && plan.cohort_id != null && userCohortIdSet.has(plan.cohort_id))
+            )
+
+            return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                onClick={() => handlePlanClick(plan.id)}
+                onManage={onPlanManage ? () => onPlanManage(plan.id) : undefined}
+                canManage={canManage}
+              />
+            )
+          })}
         </div>
       )}
     </div>

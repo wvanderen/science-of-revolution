@@ -3,8 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useResourceCompletion, useResourceProgress } from '../useResourceProgress'
 import { type Database } from '../../../../lib/database.types'
-import { useSession } from '../../../../hooks/useSession'
+import { useSession, type SessionState } from '../../../../hooks/useSession'
 import { useSupabase } from '../../../../components/providers/SupabaseProvider'
+import { type SupabaseClient, type Session } from '@supabase/supabase-js'
 
 type ProgressRow = Database['public']['Tables']['progress']['Row']
 
@@ -60,26 +61,31 @@ vi.mock('../../../../hooks/useSession', () => ({
 const mockedUseSupabase = vi.mocked(useSupabase)
 const mockedUseSession = vi.mocked(useSession)
 
-const defaultSessionValue = {
+const defaultSessionValue: SessionState = {
   session: {
     user: {
       id: 'test-user-id'
     }
-  }
+  } as unknown as Session,
+  loading: false
 }
 
-const createSupabaseMock = (data: ProgressRow[]) => ({
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
+const createSupabaseMock = (data: ProgressRow[]): SupabaseClient<any, 'public', any> => {
+  const mock = {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          data,
-          error: null
+          eq: vi.fn(() => ({
+            data,
+            error: null
+          }))
         }))
       }))
     }))
-  }))
-})
+  }
+
+  return mock as unknown as SupabaseClient<any, 'public', any>
+}
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -111,7 +117,8 @@ describe('useResourceProgress', () => {
   describe('useResourceProgress', () => {
     it('should not fetch progress when user is not authenticated', async () => {
       mockedUseSession.mockReturnValue({
-        session: null
+        session: null,
+        loading: false
       })
 
       const { result } = renderHook(() => useResourceProgress('resource-1'), {

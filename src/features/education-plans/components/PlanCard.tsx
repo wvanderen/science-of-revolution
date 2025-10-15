@@ -4,6 +4,7 @@ import { useSession } from '../../../hooks/useSession'
 interface Plan {
   id: string
   title: string
+  created_by: string
   description: string | null
   cohort_id: string | null
   estimated_weeks: number | null
@@ -17,12 +18,14 @@ interface Plan {
 interface PlanCardProps {
   plan: Plan
   onClick: () => void
+  onManage?: (planId: string) => void
+  canManage?: boolean
 }
 
 /**
  * Card component for displaying education plan preview
  */
-export function PlanCard({ plan, onClick }: PlanCardProps): JSX.Element {
+export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCardProps): JSX.Element {
   const { session } = useSession()
   const { data: enrollment } = usePlanEnrollment(plan.id, session?.user?.id)
 
@@ -64,6 +67,11 @@ export function PlanCard({ plan, onClick }: PlanCardProps): JSX.Element {
   }
 
   const enrollmentStatus = getEnrollmentStatus()
+
+  const handleManageClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onManage?.(plan.id)
+  }
 
   return (
     <div
@@ -166,11 +174,21 @@ export function PlanCard({ plan, onClick }: PlanCardProps): JSX.Element {
           </div>
         </div>
 
-        {/* View Arrow */}
-        <div className="text-primary group-hover:translate-x-1 transition-transform">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {canManage && onManage && (
+            <button
+              onClick={handleManageClick}
+              className="px-3 py-1.5 text-xs font-medium border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+            >
+              Manage
+            </button>
+          )}
+          <div className="text-primary group-hover:translate-x-1 transition-transform">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>

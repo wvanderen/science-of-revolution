@@ -30,7 +30,7 @@ export class HighlightsRepository {
 
       if (Array.isArray(notes) && notes.length > 0) {
         note = notes[0] ?? null
-      } else if (notes != null && typeof notes === 'object') {
+      } else if (notes != null && !Array.isArray(notes)) {
         note = notes
       }
 

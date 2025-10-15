@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useEducationPlan } from '../hooks/useEducationPlans'
+import { useEducationPlan, useCanEditPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
 import { usePlanEnrollment, useEnrollInPlan } from '../hooks/usePlanEnrollment'
 import { useSession } from '../../../hooks/useSession'
 import { TopicList } from './TopicList'
 import { useAnalytics } from '../../../lib/analytics'
+import { PlanManagementPanel } from './PlanManagementPanel'
 
 interface PlanDetailViewProps {
   planId: string
@@ -22,6 +23,7 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
   const { data: enrollment } = usePlanEnrollment(planId, session?.user?.id)
   const enrollInPlan = useEnrollInPlan()
   const { trackInteraction } = useAnalytics()
+  const { data: canEditPlan } = useCanEditPlan(planId)
 
   const [showEnrollConfirm, setShowEnrollConfirm] = useState(false)
 
@@ -239,6 +241,13 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
           showProgress={enrollmentStatus !== 'not_enrolled'}
         />
       </div>
+
+      {canEditPlan && (
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Manage Plan</h2>
+          <PlanManagementPanel planId={planId} plan={plan} />
+        </div>
+      )}
 
       {/* Enrollment Confirmation Modal */}
       {showEnrollConfirm && (

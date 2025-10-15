@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useProfile } from '../../../hooks/useProfile'
 import { PlanBrowser } from '../components/PlanBrowser'
 import { PlanDetailView } from '../components/PlanDetailView'
 import { PlanWizard } from '../components/PlanWizard/PlanWizard'
+import { useSession } from '../../../hooks/useSession'
+import { useUserCohorts } from '../../../hooks/useUserCohorts'
 
 type ViewMode = 'browse' | 'detail' | 'create'
 
@@ -12,8 +14,12 @@ type ViewMode = 'browse' | 'detail' | 'create'
  */
 export function EducationPlansPage(): JSX.Element {
   const { isFacilitator } = useProfile()
+  const { session } = useSession()
+  const { data: cohorts } = useUserCohorts()
   const [viewMode, setViewMode] = useState<ViewMode>('browse')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+
+  const userCohortIds = useMemo(() => cohorts?.map(cohort => cohort.id) ?? [], [cohorts])
 
   const handlePlanSelect = (planId: string) => {
     setSelectedPlanId(planId)
@@ -22,6 +28,11 @@ export function EducationPlansPage(): JSX.Element {
 
   const handleCreatePlan = () => {
     setViewMode('create')
+  }
+
+  const handlePlanManage = (planId: string) => {
+    setSelectedPlanId(planId)
+    setViewMode('detail')
   }
 
   const handleBackToBrowse = () => {
@@ -74,7 +85,13 @@ export function EducationPlansPage(): JSX.Element {
         {/* Content Area */}
         <div>
           {viewMode === 'browse' && (
-            <PlanBrowser onPlanSelect={handlePlanSelect} />
+            <PlanBrowser
+              onPlanSelect={handlePlanSelect}
+              onPlanManage={handlePlanManage}
+              currentUserId={session?.user?.id}
+              isFacilitator={isFacilitator}
+              userCohortIds={userCohortIds}
+            />
           )}
 
           {viewMode === 'detail' && selectedPlanId && (

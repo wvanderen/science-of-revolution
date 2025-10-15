@@ -11,7 +11,15 @@
       "Bash(npm run build)",
       "Bash(tree:*)",
       "Bash(npm run lint)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm run db:status:*)",
+      "Bash(npm run:*)",
+      "Bash(for file in *.tsx)",
+      "Bash(do base=\"$file%.tsx\")",
+      "Bash(if [ -f \"$base.js\" ])",
+      "Bash(then echo \"Removing duplicate: $base.js\")",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
