@@ -17,7 +17,7 @@ export function DeleteResourceModal ({
   resource,
   isOpen,
   onClose
-}: DeleteResourceModalProps): JSX.Element {
+}: DeleteResourceModalProps): JSX.Element | null {
   const deleteResource = useDeleteResource()
   const { showToast } = useToast()
 
@@ -54,7 +54,7 @@ export function DeleteResourceModal ({
               Delete Resource
             </h3>
             <p className="text-foreground-muted">
-              Are you sure you want to delete "{resource.title}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{resource.title}&rdquo;? This action cannot be undone.
             </p>
             <p className="text-sm text-foreground-muted mt-2">
               This will permanently delete the resource and all its sections.

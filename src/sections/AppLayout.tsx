@@ -49,11 +49,14 @@ const AppLayout = (): JSX.Element => {
               Science of Revolution
             </Link>
             <nav className="hidden md:flex items-center gap-1 text-sm">
+              <Link to="/" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
+                Dashboard
+              </Link>
               <Link to="/library" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
                 Library
               </Link>
-              <Link to="/" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
-                Dashboard
+              <Link to="/education-plans" className="text-foreground-muted hover:text-foreground transition-colors px-3 py-1.5 rounded-md hover:bg-background">
+                Education Plans
               </Link>
             </nav>
           </div>

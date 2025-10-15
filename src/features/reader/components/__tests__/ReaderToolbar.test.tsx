@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { ReaderToolbar } from '../ReaderToolbar'
@@ -18,9 +18,9 @@ type Progress = Database['public']['Tables']['progress']['Row']
 
 const now = new Date().toISOString()
 const mockSections: ResourceSection[] = [
-  { id: '1', title: 'Introduction', order: 0, content_html: '<p>Test content</p>', word_count: 100, resource_id: 'test', created_at: now, updated_at: now },
-  { id: '2', title: 'Chapter 1', order: 1, content_html: '<p>Test content</p>', word_count: 200, resource_id: 'test', created_at: now, updated_at: now },
-  { id: '3', title: 'Conclusion', order: 2, content_html: '<p>Test content</p>', word_count: 150, resource_id: 'test', created_at: now, updated_at: now }
+  { id: '1', title: 'Introduction', order: 0, content_html: '<p>Test content</p>', content: null, word_count: 100, resource_id: 'test', created_at: now, updated_at: now },
+  { id: '2', title: 'Chapter 1', order: 1, content_html: '<p>Test content</p>', content: null, word_count: 200, resource_id: 'test', created_at: now, updated_at: now },
+  { id: '3', title: 'Conclusion', order: 2, content_html: '<p>Test content</p>', content: null, word_count: 150, resource_id: 'test', created_at: now, updated_at: now }
 ]
 
 const mockProgress: Progress = {

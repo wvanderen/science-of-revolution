@@ -2,7 +2,7 @@
 -- This allows editing content while keeping content_html for display
 
 ALTER TABLE resource_sections
-ADD COLUMN content TEXT;
+ADD COLUMN IF NOT EXISTS content TEXT;
 
 -- Create an index on the content field for better search performance if needed
 -- CREATE INDEX idx_resource_sections_content ON resource_sections USING gin(to_tsvector('english', content));

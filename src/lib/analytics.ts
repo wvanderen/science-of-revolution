@@ -5,9 +5,11 @@
 
 export interface AnalyticsEvent {
   event: string
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   timestamp?: string
 }
+
+type AnalyticsProperties = Record<string, unknown>
 
 class Analytics {
   private isDevelopment = import.meta.env.DEV
@@ -15,7 +17,7 @@ class Analytics {
   /**
    * Track an analytics event
    */
-  track(event: string, properties?: Record<string, any>) {
+  track(event: string, properties?: AnalyticsProperties) {
     const analyticsEvent: AnalyticsEvent = {
       event,
       properties: properties || {},
@@ -30,7 +32,7 @@ class Analytics {
     // In production, this would send to your analytics service
     // For now, we'll just store in localStorage for debugging
     try {
-      const existingEvents = JSON.parse(localStorage.getItem('analytics_events') || '[]')
+      const existingEvents = JSON.parse(localStorage.getItem('analytics_events') || '[]') as AnalyticsEvent[]
       existingEvents.push(analyticsEvent)
 
       // Keep only last 100 events to avoid storage bloat
@@ -44,14 +46,14 @@ class Analytics {
   /**
    * Track page views
    */
-  page(page: string, properties?: Record<string, any>) {
+  page(page: string, properties?: AnalyticsProperties) {
     this.track('page_view', { page, ...properties })
   }
 
   /**
    * Track user interactions
    */
-  trackInteraction(element: string, action: string, properties?: Record<string, any>) {
+  trackInteraction(element: string, action: string, properties?: AnalyticsProperties) {
     this.track('user_interaction', {
       element,
       action,
@@ -64,7 +66,7 @@ class Analytics {
    */
   getEvents(): AnalyticsEvent[] {
     try {
-      return JSON.parse(localStorage.getItem('analytics_events') || '[]')
+      return JSON.parse(localStorage.getItem('analytics_events') || '[]') as AnalyticsEvent[]
     } catch {
       return []
     }

@@ -33,6 +33,13 @@ export interface Recommendation {
   coverArt?: string
 }
 
+const classifyLength = (wordCount?: number | null): 'short' | 'medium' | 'long' => {
+  if (wordCount == null) return 'long'
+  if (wordCount < 2000) return 'short'
+  if (wordCount < 8000) return 'medium'
+  return 'long'
+}
+
 /**
  * Hook to get reading insights and recommendations
  */
@@ -246,9 +253,7 @@ function generateRecommendations(resources: ResourceWithSections[], recentReadin
         author: resource.author || 'Unknown',
         reason: `Similar to other ${resource.type}s you've read`,
         type: resource.type || 'article',
-        length: resource.totalWordCount && resource.totalWordCount < 2000 ? 'short'
-          : resource.totalWordCount && resource.totalWordCount < 8000 ? 'medium'
-          : 'long' as const,
+        length: classifyLength(resource.totalWordCount),
         coverArt: resource.storage_path
       })
     })
@@ -264,9 +269,7 @@ function generateRecommendations(resources: ResourceWithSections[], recentReadin
         author: resource.author || 'Unknown',
         reason: 'Popular in the library',
         type: resource.type || 'article',
-        length: resource.totalWordCount && resource.totalWordCount < 2000 ? 'short'
-          : resource.totalWordCount && resource.totalWordCount < 8000 ? 'medium'
-          : 'long' as const,
+        length: classifyLength(resource.totalWordCount),
         coverArt: resource.storage_path
       }))
 

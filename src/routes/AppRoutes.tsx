@@ -6,6 +6,7 @@ import LoginPage from '../pages/LoginPage'
 import { LibraryPage } from '../features/library/pages/LibraryPage'
 import { ReaderPage } from '../features/reader/pages/ReaderPage'
 import { ResourceUploadPage } from '../features/library/pages/ResourceUploadPage'
+import { EducationPlansPage } from '../features/education-plans/pages/EducationPlansPage'
 
 const AppRoutes = (): JSX.Element => (
   <Routes>
@@ -16,6 +17,7 @@ const AppRoutes = (): JSX.Element => (
       <Route path="library" element={<LibraryPage />} />
       <Route path="library/upload" element={<ResourceUploadPage />} />
       <Route path="reader/:resourceId" element={<ReaderPage />} />
+      <Route path="education-plans" element={<EducationPlansPage />} />
     </Route>
   </Routes>
 )

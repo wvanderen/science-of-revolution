@@ -309,6 +309,189 @@ export interface Database {
           updated_at?: string
         }
       }
+      education_plans: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          cohort_id: string | null
+          created_by: string
+          is_template: boolean
+          is_published: boolean
+          estimated_weeks: number | null
+          difficulty_level: 'beginner' | 'intermediate' | 'advanced' | null
+          tags: string[] | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          cohort_id?: string | null
+          created_by: string
+          is_template?: boolean
+          is_published?: boolean
+          estimated_weeks?: number | null
+          difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | null
+          tags?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          cohort_id?: string | null
+          created_by?: string
+          is_template?: boolean
+          is_published?: boolean
+          estimated_weeks?: number | null
+          difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | null
+          tags?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      education_plan_topics: {
+        Row: {
+          id: string
+          education_plan_id: string
+          title: string
+          description: string | null
+          order_index: number
+          estimated_hours: number | null
+          is_required: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          education_plan_id: string
+          title: string
+          description?: string | null
+          order_index: number
+          estimated_hours?: number | null
+          is_required?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          education_plan_id?: string
+          title?: string
+          description?: string | null
+          order_index?: number
+          estimated_hours?: number | null
+          is_required?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      topic_readings: {
+        Row: {
+          id: string
+          topic_id: string
+          resource_id: string
+          reading_type: 'required' | 'further' | 'optional'
+          order_index: number
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          topic_id: string
+          resource_id: string
+          reading_type?: 'required' | 'further' | 'optional'
+          order_index: number
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          topic_id?: string
+          resource_id?: string
+          reading_type?: 'required' | 'further' | 'optional'
+          order_index?: number
+          notes?: string | null
+        }
+      }
+      user_plan_progress: {
+        Row: {
+          id: string
+          user_id: string
+          education_plan_id: string
+          status: 'not_started' | 'in_progress' | 'completed'
+          started_at: string | null
+          completed_at: string | null
+          current_topic_id: string | null
+          progress_percentage: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          education_plan_id: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          started_at?: string | null
+          completed_at?: string | null
+          current_topic_id?: string | null
+          progress_percentage?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          education_plan_id?: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          started_at?: string | null
+          completed_at?: string | null
+          current_topic_id?: string | null
+          progress_percentage?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_topic_progress: {
+        Row: {
+          id: string
+          user_id: string
+          topic_id: string
+          status: 'not_started' | 'in_progress' | 'completed'
+          started_at: string | null
+          completed_at: string | null
+          progress_percentage: number
+          reading_progress: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          topic_id: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          started_at?: string | null
+          completed_at?: string | null
+          progress_percentage?: number
+          reading_progress?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          topic_id?: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          started_at?: string | null
+          completed_at?: string | null
+          progress_percentage?: number
+          reading_progress?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {

@@ -22,14 +22,16 @@ export class HighlightsRepository {
       .order('start_pos', { ascending: true })
 
     if (error != null) throw error
-    return (data ?? []).map((row: any) => {
-      const { notes, ...highlight } = row
+    type HighlightWithNotesQuery = Highlight & { notes: Note[] | Note | null }
+    const rows = (data ?? []) as HighlightWithNotesQuery[]
+
+    return rows.map(({ notes, ...highlight }) => {
       let note: Note | null = null
 
       if (Array.isArray(notes) && notes.length > 0) {
-        note = notes[0] as Note
+        note = notes[0] ?? null
       } else if (notes != null && typeof notes === 'object') {
-        note = notes as Note
+        note = notes
       }
 
       return {

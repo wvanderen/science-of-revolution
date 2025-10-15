@@ -263,16 +263,21 @@ export function getSpacing(key: keyof typeof spacing): string {
  */
 export function getColor(path: string): string {
   const parts = path.split('.')
-  let value: any = colors
+  let value: unknown = colors
 
   for (const part of parts) {
-    value = value[part]
-    if (value === undefined) {
+    if (typeof value === 'object' && value !== null && part in value) {
+      value = (value as Record<string, unknown>)[part]
+    } else {
       throw new Error(`Color path "${path}" not found`)
     }
   }
 
-  return value
+  if (typeof value === 'string') {
+    return value
+  }
+
+  throw new Error(`Color path "${path}" does not resolve to a string`)
 }
 
 /**

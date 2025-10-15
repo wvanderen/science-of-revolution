@@ -41,7 +41,7 @@ export function useParagraphNavigation ({
     if (contentRef.current !== container) {
       setContainer(contentRef.current)
     }
-  })
+  }, [contentRef, container])
 
   useEffect(() => {
     if (container == null) return

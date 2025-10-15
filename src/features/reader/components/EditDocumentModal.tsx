@@ -29,7 +29,7 @@ export function EditDocumentModal ({
   isOpen,
   onClose,
   onSave
-}: EditDocumentModalProps): JSX.Element {
+}: EditDocumentModalProps): JSX.Element | null {
   const [editedSections, setEditedSections] = useState<SectionEdit[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useUpdateResource } from '../hooks/useResources'
-import { useSupabase } from '../../../components/providers/SupabaseProvider'
 import { useToast } from '../../../components/providers/ToastProvider'
 import { type Database } from '../../../lib/database.types'
 
@@ -27,7 +26,7 @@ export function EditResourceModal ({
   resource,
   isOpen,
   onClose
-}: EditResourceModalProps): JSX.Element {
+}: EditResourceModalProps): JSX.Element | null {
   const [form, setForm] = useState<EditFormState>({
     title: resource.title,
     author: resource.author ?? '',

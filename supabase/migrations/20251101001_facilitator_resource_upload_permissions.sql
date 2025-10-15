@@ -23,6 +23,7 @@ set
 -- RLS POLICIES FOR PUBLIC.RESOURCES TABLE
 -- Allow facilitators (profiles.roles contains 'facilitator') to manage resources
 -- ============================================================================
+drop policy if exists "Facilitators can insert resources" on public.resources;
 create policy "Facilitators can insert resources"
   on public.resources
   for insert
@@ -36,6 +37,7 @@ create policy "Facilitators can insert resources"
     )
   );
 
+drop policy if exists "Facilitators can update resources" on public.resources;
 create policy "Facilitators can update resources"
   on public.resources
   for update
@@ -57,6 +59,7 @@ create policy "Facilitators can update resources"
     )
   );
 
+drop policy if exists "Facilitators can delete resources" on public.resources;
 create policy "Facilitators can delete resources"
   on public.resources
   for delete

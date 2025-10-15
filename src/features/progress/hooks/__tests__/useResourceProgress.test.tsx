@@ -2,35 +2,13 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useResourceCompletion, useResourceProgress } from '../useResourceProgress'
-import { type Progress } from '../../../../lib/database.types'
+import { type Database } from '../../../../lib/database.types'
+import { useSession } from '../../../../hooks/useSession'
+import { useSupabase } from '../../../../components/providers/SupabaseProvider'
 
-// Mock Supabase and session
-vi.mock('../../../components/providers/SupabaseProvider', () => ({
-  useSupabase: () => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            data: mockProgressData,
-            error: null
-          }))
-        }))
-      }))
-    }))
-  })
-}))
+type ProgressRow = Database['public']['Tables']['progress']['Row']
 
-vi.mock('../../../hooks/useSession', () => ({
-  useSession: () => ({
-    session: {
-      user: {
-        id: 'test-user-id'
-      }
-    }
-  })
-}))
-
-const mockProgressData: Progress[] = [
+const mockProgressData: ProgressRow[] = [
   {
     id: '1',
     user_id: 'test-user-id',
@@ -53,6 +31,56 @@ const mockProgressData: Progress[] = [
   }
 ]
 
+// Mock Supabase and session
+vi.mock('../../../../components/providers/SupabaseProvider', () => ({
+  useSupabase: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            data: mockProgressData,
+            error: null
+          }))
+        }))
+      }))
+    }))
+  }))
+}))
+
+vi.mock('../../../../hooks/useSession', () => ({
+  useSession: vi.fn(() => ({
+    session: {
+      user: {
+        id: 'test-user-id'
+      }
+    }
+  }))
+}))
+
+const mockedUseSupabase = vi.mocked(useSupabase)
+const mockedUseSession = vi.mocked(useSession)
+
+const defaultSessionValue = {
+  session: {
+    user: {
+      id: 'test-user-id'
+    }
+  }
+}
+
+const createSupabaseMock = (data: ProgressRow[]) => ({
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          data,
+          error: null
+        }))
+      }))
+    }))
+  }))
+})
+
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -62,21 +90,27 @@ const createWrapper = () => {
     }
   })
 
-  return ({ children }: { children: React.ReactNode }) => (
+  const TestWrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   )
+
+  TestWrapper.displayName = 'TestWrapper'
+
+  return TestWrapper
 }
 
 describe('useResourceProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockedUseSession.mockReturnValue(defaultSessionValue)
+    mockedUseSupabase.mockReturnValue(createSupabaseMock(mockProgressData))
   })
 
   describe('useResourceProgress', () => {
     it('should not fetch progress when user is not authenticated', async () => {
-      vi.mocked(require('../../../hooks/useSession').useSession).mockReturnValue({
+      mockedUseSession.mockReturnValue({
         session: null
       })
 
@@ -152,18 +186,7 @@ describe('useResourceProgress', () => {
         status: 'completed' as const
       }))
 
-      vi.mocked(require('../../../components/providers/SupabaseProvider').useSupabase).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                data: allCompletedData,
-                error: null
-              }))
-            }))
-          }))
-        }))
-      })
+      mockedUseSupabase.mockReturnValue(createSupabaseMock(allCompletedData))
 
       const { result } = renderHook(
         () => useResourceCompletion('resource-1', 2),
@@ -183,18 +206,7 @@ describe('useResourceProgress', () => {
 
     it('should show not started when no progress exists', async () => {
       // Mock empty progress data
-      vi.mocked(require('../../../components/providers/SupabaseProvider').useSupabase).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                data: [],
-                error: null
-              }))
-            }))
-          }))
-        }))
-      })
+      mockedUseSupabase.mockReturnValue(createSupabaseMock([]))
 
       const { result } = renderHook(
         () => useResourceCompletion('resource-1', 5),
@@ -216,18 +228,7 @@ describe('useResourceProgress', () => {
       // Mock only in-progress data (no completed sections)
       const inProgressData = mockProgressData.filter(p => p.status === 'in_progress')
 
-      vi.mocked(require('../../../components/providers/SupabaseProvider').useSupabase).mockReturnValue({
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                data: inProgressData,
-                error: null
-              }))
-            }))
-          }))
-        }))
-      })
+      mockedUseSupabase.mockReturnValue(createSupabaseMock(inProgressData))
 
       const { result } = renderHook(
         () => useResourceCompletion('resource-1', 3),

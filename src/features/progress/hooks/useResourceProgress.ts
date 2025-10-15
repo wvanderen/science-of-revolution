@@ -21,7 +21,8 @@ export function useResourceProgress (resourceId: string | undefined) {
       const repository = new ProgressRepository(supabase)
       return await repository.getByUserAndResource(session.user.id, resourceId)
     },
-    enabled: session?.user != null && resourceId != null
+    enabled: session?.user != null && resourceId != null,
+    initialData: []
   })
 }
 

@@ -95,11 +95,13 @@ create index if not exists idx_progress_status on public.progress (status, compl
 -- Resource Sections: Anyone authenticated can read; admins can modify
 alter table public.resource_sections enable row level security;
 
+drop policy if exists "Anyone can read resource sections" on public.resource_sections;
 create policy "Anyone can read resource sections"
     on public.resource_sections for select
     to authenticated
     using (true);
 
+drop policy if exists "Facilitators can manage resource sections" on public.resource_sections;
 create policy "Facilitators can manage resource sections"
     on public.resource_sections for all
     to authenticated
@@ -114,17 +116,20 @@ create policy "Facilitators can manage resource sections"
 -- Highlights: Users can manage their own; can read based on visibility
 alter table public.highlights enable row level security;
 
+drop policy if exists "Users can manage their own highlights" on public.highlights;
 create policy "Users can manage their own highlights"
     on public.highlights for all
     to authenticated
     using (user_id = auth.uid())
     with check (user_id = auth.uid());
 
+drop policy if exists "Users can read private highlights they own" on public.highlights;
 create policy "Users can read private highlights they own"
     on public.highlights for select
     to authenticated
     using (user_id = auth.uid() and visibility = 'private');
 
+drop policy if exists "Users can read cohort highlights in their cohorts" on public.highlights;
 create policy "Users can read cohort highlights in their cohorts"
     on public.highlights for select
     to authenticated
@@ -137,6 +142,7 @@ create policy "Users can read cohort highlights in their cohorts"
         )
     );
 
+drop policy if exists "Users can read global highlights" on public.highlights;
 create policy "Users can read global highlights"
     on public.highlights for select
     to authenticated
@@ -145,12 +151,14 @@ create policy "Users can read global highlights"
 -- Notes: Users can manage their own notes
 alter table public.notes enable row level security;
 
+drop policy if exists "Users can manage their own notes" on public.notes;
 create policy "Users can manage their own notes"
     on public.notes for all
     to authenticated
     using (user_id = auth.uid())
     with check (user_id = auth.uid());
 
+drop policy if exists "Users can read notes on highlights they can see" on public.notes;
 create policy "Users can read notes on highlights they can see"
     on public.notes for select
     to authenticated
@@ -176,12 +184,14 @@ create policy "Users can read notes on highlights they can see"
 -- Progress: Users can manage their own progress
 alter table public.progress enable row level security;
 
+drop policy if exists "Users can manage their own progress" on public.progress;
 create policy "Users can manage their own progress"
     on public.progress for all
     to authenticated
     using (user_id = auth.uid())
     with check (user_id = auth.uid());
 
+drop policy if exists "Facilitators can view cohort member progress" on public.progress;
 create policy "Facilitators can view cohort member progress"
     on public.progress for select
     to authenticated
@@ -216,4 +226,3 @@ comment on column public.progress.scroll_percent is 'Percentage of section scrol
 -- drop table if exists public.highlights cascade;
 -- drop table if exists public.resource_sections cascade;
 -- ============================================================================
-
