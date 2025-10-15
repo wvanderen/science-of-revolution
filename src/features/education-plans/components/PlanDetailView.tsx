@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useEducationPlan, useCanEditPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
 import { usePlanEnrollment, useEnrollInPlan } from '../hooks/usePlanEnrollment'
@@ -17,6 +18,7 @@ interface PlanDetailViewProps {
  * Detailed view of an education plan with enrollment functionality
  */
 export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailViewProps): JSX.Element {
+  const navigate = useNavigate()
   const { session } = useSession()
   const { data: plan, isLoading: planLoading } = useEducationPlan(planId)
   const { data: topics } = usePlanTopics(planId)
@@ -26,6 +28,10 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
   const { data: canEditPlan } = useCanEditPlan(planId)
 
   const [showEnrollConfirm, setShowEnrollConfirm] = useState(false)
+
+  const handleTopicClick = (topicId: string) => {
+    navigate(`/education-plans/topics/${topicId}`)
+  }
 
   const handleEnroll = async () => {
     if (!session?.user?.id) return
@@ -239,6 +245,7 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
         <TopicList
           planId={planId}
           showProgress={enrollmentStatus !== 'not_enrolled'}
+          onTopicClick={handleTopicClick}
         />
       </div>
 

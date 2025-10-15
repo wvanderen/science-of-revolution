@@ -273,7 +273,21 @@ export function ReaderPage (): JSX.Element {
   }
 
   const handleClose = (): void => {
-    navigate('/library')
+    // Check if we came from an education plan context
+    const searchParams = new URLSearchParams(window.location.search)
+    const planId = searchParams.get('planId')
+    const topicId = searchParams.get('topicId')
+
+    if (topicId) {
+      // Return to topic detail page
+      navigate(`/education-plans/topics/${topicId}`)
+    } else if (planId) {
+      // Return to plan detail page
+      navigate(`/education-plans/${planId}`)
+    } else {
+      // Default to library
+      navigate('/library')
+    }
   }
 
   // Handle highlight creation

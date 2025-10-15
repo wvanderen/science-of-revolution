@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useProfile } from '../../../hooks/useProfile'
 import { PlanBrowser } from '../components/PlanBrowser'
 import { PlanDetailView } from '../components/PlanDetailView'
@@ -13,37 +14,49 @@ type ViewMode = 'browse' | 'detail' | 'create'
  * Shows plan browser, detail view, or creation wizard based on user interaction
  */
 export function EducationPlansPage(): JSX.Element {
+  const navigate = useNavigate()
+  const { planId: urlPlanId } = useParams<{ planId?: string }>()
+  const [searchParams] = useSearchParams()
   const { isFacilitator } = useProfile()
   const { session } = useSession()
   const { data: cohorts } = useUserCohorts()
   const [viewMode, setViewMode] = useState<ViewMode>('browse')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
 
+  // Detect view mode from URL
+  useEffect(() => {
+    if (urlPlanId) {
+      setSelectedPlanId(urlPlanId)
+      setViewMode('detail')
+    } else if (searchParams.get('create') === 'true') {
+      setViewMode('create')
+    } else {
+      setViewMode('browse')
+      setSelectedPlanId(null)
+    }
+  }, [urlPlanId, searchParams])
+
   const userCohortIds = useMemo(() => cohorts?.map(cohort => cohort.id) ?? [], [cohorts])
 
   const handlePlanSelect = (planId: string) => {
-    setSelectedPlanId(planId)
-    setViewMode('detail')
+    navigate(`/education-plans/${planId}`)
   }
 
   const handleCreatePlan = () => {
-    setViewMode('create')
+    navigate('/education-plans?create=true')
   }
 
   const handlePlanManage = (planId: string) => {
-    setSelectedPlanId(planId)
-    setViewMode('detail')
+    navigate(`/education-plans/${planId}`)
   }
 
   const handleBackToBrowse = () => {
-    setViewMode('browse')
-    setSelectedPlanId(null)
+    navigate('/education-plans')
   }
 
   const handlePlanCreated = () => {
     // After successful creation, go back to browse
-    setViewMode('browse')
-    setSelectedPlanId(null)
+    navigate('/education-plans')
   }
 
   const handleStartLearning = (_planId: string, _topicId: string) => {
@@ -53,7 +66,7 @@ export function EducationPlansPage(): JSX.Element {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with Create Button */}
+        {/* Header with Action Buttons */}
         {viewMode === 'browse' && (
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -63,22 +76,39 @@ export function EducationPlansPage(): JSX.Element {
               </p>
             </div>
 
-            {isFacilitator && (
+            <div className="flex items-center gap-3">
               <button
-                onClick={handleCreatePlan}
-                className="px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors flex items-center space-x-2"
+                onClick={() => navigate('/education-plans/my-plans')}
+                className="px-6 py-3 border border-border text-foreground font-semibold rounded-md hover:bg-accent transition-colors flex items-center space-x-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                   />
                 </svg>
-                <span>Create Plan</span>
+                <span>My Plans</span>
               </button>
-            )}
+
+              {isFacilitator && (
+                <button
+                  onClick={handleCreatePlan}
+                  className="px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  <span>Create Plan</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
