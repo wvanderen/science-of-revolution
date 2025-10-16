@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { usePlanTopic, useTopicReadings } from '../hooks/usePlanTopics'
 import { useEducationPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
-import { useTopicProgress, useStartTopic, useCompleteTopic } from '../hooks/usePlanEnrollment'
+import { useStartTopic, useCompleteTopic } from '../hooks/usePlanEnrollment'
+import { useCalculatedTopicProgress } from '../hooks/useCalculatedTopicProgress'
 import { useSession } from '../../../hooks/useSession'
 
 interface TopicReading {
@@ -36,7 +37,7 @@ export function TopicDetailPage() {
   const { data: readings = [], isLoading: readingsLoading } = useTopicReadings(topicId)
   const { data: plan } = useEducationPlan(topic?.education_plan_id)
   const { data: allTopics = [] } = usePlanTopics(topic?.education_plan_id)
-  const { data: progress } = useTopicProgress(topicId, session?.user?.id)
+  const { data: progress } = useCalculatedTopicProgress(topicId)
 
   // Mutations
   const startTopicMutation = useStartTopic()
@@ -164,11 +165,16 @@ export function TopicDetailPage() {
   const isInProgress = progress?.status === 'in_progress'
   const isNotStarted = !progress || progress.status === 'not_started'
 
-  // Get reading progress for individual readings
+  // Get reading progress for individual readings from calculated progress
   const getReadingProgress = (resourceId: string): number => {
-    if (!progress?.reading_progress) return 0
-    const readingProgressData = progress.reading_progress as Record<string, number>
-    return readingProgressData[resourceId] || 0
+    if (!progress?.readingCompletions) return 0
+    return progress.readingCompletions[resourceId]?.percentage || 0
+  }
+
+  // Get reading completion status
+  const isReadingCompleted = (resourceId: string): boolean => {
+    if (!progress?.readingCompletions) return false
+    return progress.readingCompletions[resourceId]?.isCompleted || false
   }
 
   return (
@@ -235,7 +241,7 @@ export function TopicDetailPage() {
               {progress && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                    <span>Your Progress</span>
+                    <span>{progress.completedReadings}/{progress.totalReadings} readings completed</span>
                     <span className="font-semibold">{progress.progress_percentage || 0}%</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -309,7 +315,7 @@ export function TopicDetailPage() {
               <div className="space-y-3">
                 {categorizedReadings.required.map((reading) => {
                   const readingProgress = getReadingProgress(reading.resource_id)
-                  const isReadingComplete = readingProgress >= 100
+                  const isReadingComplete = isReadingCompleted(reading.resource_id)
 
                   return (
                     <div
@@ -374,7 +380,7 @@ export function TopicDetailPage() {
               <div className="space-y-3">
                 {categorizedReadings.further.map((reading) => {
                   const readingProgress = getReadingProgress(reading.resource_id)
-                  const isReadingComplete = readingProgress >= 100
+                  const isReadingComplete = isReadingCompleted(reading.resource_id)
 
                   return (
                     <div
@@ -439,7 +445,7 @@ export function TopicDetailPage() {
               <div className="space-y-3">
                 {categorizedReadings.optional.map((reading) => {
                   const readingProgress = getReadingProgress(reading.resource_id)
-                  const isReadingComplete = readingProgress >= 100
+                  const isReadingComplete = isReadingCompleted(reading.resource_id)
 
                   return (
                     <div

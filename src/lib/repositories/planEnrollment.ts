@@ -234,14 +234,7 @@ export class PlanEnrollmentRepository {
   async getTopicProgress(userId: string, topicId: string): Promise<UserTopicProgress | null> {
     const { data, error } = await this.supabase
       .from('user_topic_progress')
-      .select(`
-        *,
-        education_plan_topics (
-          id,
-          title,
-          education_plan_id
-        )
-      `)
+      .select('*')
       .eq('user_id', userId)
       .eq('topic_id', topicId)
       .single()
@@ -274,16 +267,7 @@ export class PlanEnrollmentRepository {
 
     const { data, error } = await this.supabase
       .from('user_topic_progress')
-      .select(`
-        *,
-        education_plan_topics (
-          id,
-          title,
-          order_index,
-          is_required,
-          estimated_hours
-        )
-      `)
+      .select('*')
       .eq('user_id', userId)
       .in('topic_id', topicIds)
       .order('created_at', { ascending: false })

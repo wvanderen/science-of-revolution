@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useEducationPlan, useCanEditPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
 import { usePlanEnrollment, useEnrollInPlan } from '../hooks/usePlanEnrollment'
+import { useCalculatedPlanProgress } from '../hooks/useCalculatedPlanProgress'
 import { useSession } from '../../../hooks/useSession'
 import { TopicList } from './TopicList'
 import { useAnalytics } from '../../../lib/analytics'
@@ -23,6 +24,7 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
   const { data: plan, isLoading: planLoading } = useEducationPlan(planId)
   const { data: topics } = usePlanTopics(planId)
   const { data: enrollment } = usePlanEnrollment(planId, session?.user?.id)
+  const { data: calculatedProgress } = useCalculatedPlanProgress(planId)
   const enrollInPlan = useEnrollInPlan()
   const { trackInteraction } = useAnalytics()
   const { data: canEditPlan } = useCanEditPlan(planId)
@@ -192,19 +194,19 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
         </div>
 
         {/* Enrollment Progress */}
-        {enrollment && (
+        {enrollment && calculatedProgress && (
           <div className="bg-muted/30 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between text-sm text-foreground mb-2">
-              <span className="font-medium">Your Progress</span>
-              <span className="font-bold">{Math.round(enrollment.progress_percentage || 0)}%</span>
+              <span className="font-medium">{calculatedProgress.completedTopics}/{calculatedProgress.totalTopics} topics completed</span>
+              <span className="font-bold">{calculatedProgress.progress_percentage}%</span>
             </div>
             <div className="h-3 bg-background rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${
-                  enrollment.status === 'completed' ? 'bg-green-500' :
-                  enrollment.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
+                  calculatedProgress.status === 'completed' ? 'bg-green-500' :
+                  calculatedProgress.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
-                style={{ width: `${enrollment.progress_percentage || 0}%` }}
+                style={{ width: `${calculatedProgress.progress_percentage}%` }}
               />
             </div>
 

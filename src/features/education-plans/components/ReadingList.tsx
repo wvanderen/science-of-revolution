@@ -1,5 +1,6 @@
 import { useTopicReadings } from '../hooks/usePlanTopics'
 import { useResources, type ResourceWithSections } from '../../library/hooks/useResources'
+import { useResourceCompletion } from '../../progress/hooks/useResourceProgress'
 import { useAnalytics } from '../../../lib/analytics'
 import { type Database } from '../../../lib/database.types'
 
@@ -150,6 +151,12 @@ function ReadingCard({
   resource: ResourceWithSections | undefined
   onClick: () => void
 }): JSX.Element {
+  const { completionPercentage, hasStarted, isCompleted } = useResourceCompletion(
+    reading.resource_id,
+    resource?.sections?.length ?? 0,
+    resource?.sections
+  )
+
   const getReadingTypeColor = (type: string) => {
     switch (type) {
       case 'required':
@@ -183,6 +190,28 @@ function ReadingCard({
 
           {reading.notes && (
             <p className="text-sm text-muted-foreground italic">&ldquo;{reading.notes}&rdquo;</p>
+          )}
+
+          {/* Progress Indicator */}
+          {hasStarted && (
+            <div className="space-y-1 mt-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
+                  {isCompleted ? 'Completed' : `${Math.round(completionPercentage)}% complete`}
+                </span>
+                {isCompleted && (
+                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="w-full bg-muted rounded-full h-1.5">
+                <div
+                  className="bg-green-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+            </div>
           )}
 
           {resource && (

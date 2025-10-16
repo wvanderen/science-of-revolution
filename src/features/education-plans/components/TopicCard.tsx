@@ -1,6 +1,6 @@
 import { type MouseEvent } from 'react'
 import { useTopicReadings } from '../hooks/usePlanTopics'
-import { useTopicProgress } from '../hooks/usePlanEnrollment'
+import { useCalculatedTopicProgress } from '../hooks/useCalculatedTopicProgress'
 import { useSession } from '../../../hooks/useSession'
 import { useAnalytics } from '../../../lib/analytics'
 
@@ -38,7 +38,7 @@ export function TopicCard({
 }: TopicCardProps): JSX.Element {
   const { session } = useSession()
   const { data: readings } = useTopicReadings(topic.id)
-  const { data: progress } = useTopicProgress(topic.id, session?.user?.id)
+  const { data: progress } = useCalculatedTopicProgress(topic.id)
   const { trackInteraction } = useAnalytics()
 
   const handleEdit = (e: MouseEvent<HTMLButtonElement>) => {
@@ -48,7 +48,7 @@ export function TopicCard({
 
   const getProgressPercentage = () => {
     if (!progress) return 0
-    return progress.progress_percentage || 0
+    return progress.progress_percentage ?? 0
   }
 
   const getStatusColor = () => {
@@ -201,7 +201,7 @@ export function TopicCard({
       {showProgress && (
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <span>Progress</span>
+            <span>{progress?.completedReadings ?? 0}/{progress?.totalReadings ?? 0} readings completed</span>
             <span>{Math.round(getProgressPercentage())}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -218,39 +218,67 @@ export function TopicCard({
         <div className="mt-6 pt-6 border-t border-border">
           <h4 className="font-medium text-foreground mb-4">Readings</h4>
           <div className="space-y-3">
-            {readings.map((reading) => (
-              <div
-                key={reading.id}
-                className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className={`
-                  w-2 h-2 rounded-full mt-2 flex-shrink-0
-                  ${reading.reading_type === 'required' ? 'bg-primary' :
-                    reading.reading_type === 'further' ? 'bg-blue-500' : 'bg-gray-400'}
-                `} />
+            {readings.map((reading) => {
+              const readingCompletion = progress?.readingCompletions?.[reading.resource_id]
+              const completionPercentage = readingCompletion?.percentage ?? 0
+              const isCompleted = readingCompletion?.isCompleted ?? false
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h5 className="font-medium text-foreground text-sm">
-                      {/* In real implementation, fetch resource title */}
-                      Resource #{reading.resource_id.slice(0, 8)}
-                    </h5>
-                    <span className={`
-                      text-xs px-2 py-1 rounded
-                      ${reading.reading_type === 'required' ? 'bg-primary/10 text-primary' :
-                        reading.reading_type === 'further' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-600'}
-                    `}>
-                      {reading.reading_type}
-                    </span>
+              return (
+                <div
+                  key={reading.id}
+                  className="flex items-start space-x-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className={`
+                    w-2 h-2 rounded-full mt-2 flex-shrink-0
+                    ${reading.reading_type === 'required' ? 'bg-primary' :
+                      reading.reading_type === 'further' ? 'bg-blue-500' : 'bg-gray-400'}
+                  `} />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <h5 className="font-medium text-foreground text-sm">
+                          {/* In real implementation, fetch resource title */}
+                          Resource #{reading.resource_id.slice(0, 8)}
+                        </h5>
+                        {isCompleted && (
+                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`
+                        text-xs px-2 py-1 rounded
+                        ${reading.reading_type === 'required' ? 'bg-primary/10 text-primary' :
+                          reading.reading_type === 'further' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-600'}
+                      `}>
+                        {reading.reading_type}
+                      </span>
+                    </div>
+
+                    {reading.notes && (
+                      <p className="text-xs text-muted-foreground mt-1">{reading.notes}</p>
+                    )}
+
+                    {/* Reading Progress Bar */}
+                    {completionPercentage > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                          <span>{isCompleted ? 'Completed' : `${completionPercentage}% complete`}</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1">
+                          <div
+                            className="bg-green-600 h-1 rounded-full transition-all duration-300"
+                            style={{ width: `${completionPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {reading.notes && (
-                    <p className="text-xs text-muted-foreground mt-1">{reading.notes}</p>
-                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

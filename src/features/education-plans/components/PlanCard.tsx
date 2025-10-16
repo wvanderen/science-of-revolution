@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePlanEnrollment } from '../hooks/usePlanEnrollment'
+import { useCalculatedPlanProgress } from '../hooks/useCalculatedPlanProgress'
 import { useSession } from '../../../hooks/useSession'
 import { EnrollmentModal } from './EnrollmentModal'
 
@@ -30,6 +31,7 @@ interface PlanCardProps {
 export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCardProps): JSX.Element {
   const { session } = useSession()
   const { data: enrollment } = usePlanEnrollment(plan.id, session?.user?.id)
+  const { data: calculatedProgress } = useCalculatedPlanProgress(plan.id)
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
 
   const getDifficultyColor = (level: string | null) => {
@@ -134,26 +136,26 @@ export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCar
         )}
 
         {/* Progress Bar */}
-        {enrollment && (
+        {enrollment && calculatedProgress && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-              <span>Your Progress</span>
-              <span>{Math.round(enrollment.progress_percentage || 0)}%</span>
+              <span>{calculatedProgress.completedTopics}/{calculatedProgress.totalTopics} topics completed</span>
+              <span>{calculatedProgress.progress_percentage}%</span>
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${
-                  enrollment.status === 'completed' ? 'bg-green-500' :
-                  enrollment.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
+                  calculatedProgress.status === 'completed' ? 'bg-green-500' :
+                  calculatedProgress.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
-                style={{ width: `${enrollment.progress_percentage || 0}%` }}
+                style={{ width: `${calculatedProgress.progress_percentage}%` }}
               />
             </div>
           </div>
         )}
 
         {/* Metadata */}
-        <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-border">
           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
             {plan.estimated_weeks && (
               <div className="flex items-center space-x-1">
@@ -184,11 +186,11 @@ export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCar
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {canManage && onManage && (
               <button
                 onClick={handleManageClick}
-                className="px-3 py-1.5 text-xs font-medium border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+                className="px-3 py-1.5 text-xs font-medium border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary transition-colors whitespace-nowrap"
               >
                 Manage
               </button>
@@ -196,7 +198,7 @@ export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCar
             {!enrollment && (
               <button
                 onClick={handleEnrollClick}
-                className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap"
               >
                 Enroll
               </button>
@@ -204,12 +206,12 @@ export function PlanCard({ plan, onClick, onManage, canManage = false }: PlanCar
             {enrollment && (
               <button
                 onClick={handleEnrollClick}
-                className="px-3 py-1.5 text-xs font-medium border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+                className="px-3 py-1.5 text-xs font-medium border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary transition-colors whitespace-nowrap"
               >
                 Settings
               </button>
             )}
-            <div className="text-primary group-hover:translate-x-1 transition-transform">
+            <div className="text-primary group-hover:translate-x-1 transition-transform flex-shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

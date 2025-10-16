@@ -70,10 +70,28 @@ export class ProgressRepository {
     sectionId: string,
     scrollPercent: number
   ): Promise<Progress> {
-    const updates: ProgressUpdate = {
-      scroll_percent: scrollPercent,
-      status: scrollPercent >= 90 ? 'completed' : 'in_progress',
-      completed_at: scrollPercent >= 90 ? new Date().toISOString() : null
+    // Get existing progress to check if already completed
+    const existingProgress = await this.getByUserAndSection(userId, sectionId)
+
+    // Once completed, stay completed unless manually un-completed
+    const isAlreadyCompleted = existingProgress?.status === 'completed'
+
+    // Determine status and completion timestamp
+    let status: 'not_started' | 'in_progress' | 'completed'
+    let completed_at: string | null
+
+    if (isAlreadyCompleted) {
+      // Preserve completed status
+      status = 'completed'
+      completed_at = existingProgress.completed_at ?? new Date().toISOString()
+    } else if (scrollPercent >= 90) {
+      // Mark as completed
+      status = 'completed'
+      completed_at = new Date().toISOString()
+    } else {
+      // In progress
+      status = 'in_progress'
+      completed_at = null
     }
 
     const { data, error } = await this.supabase
@@ -82,7 +100,9 @@ export class ProgressRepository {
         {
           user_id: userId,
           resource_section_id: sectionId,
-          ...updates
+          scroll_percent: scrollPercent,
+          status,
+          completed_at
         },
         {
           onConflict: 'user_id,resource_section_id'

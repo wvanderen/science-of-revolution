@@ -1,25 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install)",
-      "Bash(cat:*)",
-      "Bash(npm test:*)",
-      "Bash(npx playwright:*)",
-      "Bash(npm run test:e2e:*)",
-      "Bash(npm run typecheck)",
-      "Bash(npm run ci:*)",
-      "Bash(npm run build)",
-      "Bash(tree:*)",
-      "Bash(npm run lint)",
-      "Bash(pkill:*)",
-      "Bash(npm run db:status:*)",
-      "Bash(npm run:*)",
-      "Bash(for file in *.tsx)",
-      "Bash(do base=\"$file%.tsx\")",
-      "Bash(if [ -f \"$base.js\" ])",
-      "Bash(then echo \"Removing duplicate: $base.js\")",
-      "Bash(fi)",
-      "Bash(done)"
+      "Bash(npm run type-check:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
