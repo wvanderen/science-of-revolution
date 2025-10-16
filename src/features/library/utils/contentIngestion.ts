@@ -10,6 +10,15 @@ export interface ParsedSection {
   word_count: number
 }
 
+function escapeHtml (value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 /**
  * Count words in HTML content (strips tags first)
  */
@@ -83,6 +92,23 @@ export function parseMarkdownToSections (markdown: string): ParsedSection[] {
 export function markdownToHtml (markdown: string): string {
   let html = markdown
 
+  // Images ![alt](src "title")
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, (_, altText, src, title) => {
+    const trimmedAlt = (altText ?? '').trim()
+    const trimmedSrc = (src ?? '').trim()
+    if (trimmedSrc.length === 0) {
+      return ''
+    }
+
+    const escapedAlt = escapeHtml(trimmedAlt)
+    const escapedSrc = escapeHtml(trimmedSrc)
+    const escapedTitle = title != null ? escapeHtml(title.trim()) : null
+    const figureCaption = trimmedAlt.length > 0 ? `<figcaption>${escapedAlt}</figcaption>` : ''
+    const titleAttribute = escapedTitle != null && escapedTitle.length > 0 ? ` title="${escapedTitle}"` : ''
+
+    return `<figure class="reader-media"><img src="${escapedSrc}" alt="${escapedAlt}" loading="lazy" decoding="async"${titleAttribute} />${figureCaption}</figure>`
+  })
+
   // Code blocks (```)
   html = html.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
 
@@ -109,7 +135,7 @@ export function markdownToHtml (markdown: string): string {
   html = paragraphs
     .map(p => {
       // Don't wrap if already wrapped in block element
-      if (p.match(/^<(ul|ol|blockquote|pre|h[1-6])/)) return p
+      if (p.match(/^<(ul|ol|blockquote|pre|h[1-6]|figure)/)) return p
       return `<p>${p.trim()}</p>`
     })
     .join('\n')

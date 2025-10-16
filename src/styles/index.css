@@ -150,6 +150,23 @@
     margin: -0.25rem -0.5rem;
   }
 
+  .reader-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: theme('borderRadius.lg');
+    display: block;
+    margin: 0 auto;
+  }
+
+  .reader-content figure.reader-media {
+    @apply my-8;
+    text-align: center;
+  }
+
+  .reader-content figure.reader-media figcaption {
+    @apply mt-3 text-sm text-foreground-muted;
+  }
+
   /* Default theme - focused paragraph */
   .reader-paragraph:focus {
     outline: none;
