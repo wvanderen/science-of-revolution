@@ -37,7 +37,7 @@ export function useIngestResource () {
       if (resourceError != null) throw resourceError
 
       // Step 2: Parse content into sections
-      const parsedSections = parseContentToSections(content, format)
+      const parsedSections = parseContentToSections(content, format, resource.title)
 
       // Step 3: Create section records
       const repository = new ResourceSectionsRepository(supabase)

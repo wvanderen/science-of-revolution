@@ -15,10 +15,24 @@ interface UseParagraphNavigationResult {
 
 function isEditableElement (element: HTMLElement | null): boolean {
   if (element == null) return false
+
+  if (!(element instanceof HTMLElement)) {
+    return false
+  }
+
   const tag = element.tagName
-  const editableTags = new Set(['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'])
+  const editableTags = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
   if (editableTags.has(tag)) return true
+
   if (element.isContentEditable) return true
+
+  if (typeof element.getAttribute === 'function') {
+    const role = element.getAttribute('role')
+    if (role === 'textbox' || role === 'combobox' || role === 'spinbutton') {
+      return true
+    }
+  }
+
   return false
 }
 

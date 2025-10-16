@@ -4,7 +4,10 @@
       "Bash(npm run type-check:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(node:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

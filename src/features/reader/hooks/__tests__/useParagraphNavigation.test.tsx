@@ -92,6 +92,30 @@ describe('useParagraphNavigation', () => {
     })
   })
 
+  it('allows ctrl + arrow to enter navigation when focus is on a toolbar button', async () => {
+    render(
+      <>
+        <button data-testid="toolbar-button">Toolbar Button</button>
+        <SampleContent html={html} />
+      </>
+    )
+
+    await waitFor(() => {
+      const paragraphs = document.querySelectorAll('p')
+      expect(paragraphs).toHaveLength(3)
+    })
+
+    const button = screen.getByTestId('toolbar-button')
+    button.focus()
+
+    fireEvent.keyDown(button, { key: 'ArrowDown', ctrlKey: true })
+
+    const paragraphs = Array.from(document.querySelectorAll('p'))
+    await waitFor(() => {
+      expect(document.activeElement).toBe(paragraphs[0])
+    })
+  })
+
   it('uses tab to advance between paragraphs when focused', async () => {
     render(<SampleContent html={html} />)
 
