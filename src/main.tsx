@@ -8,6 +8,17 @@ import { ToastProvider } from './components/providers/ToastProvider'
 import { PreferencesProvider } from './features/preferences/components/PreferencesProvider'
 import './styles/index.css'
 
+// Cleanup any leftover service workers from removed PWA plugin
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      void registration.unregister()
+    })
+  }).catch(() => {
+    // Ignore errors during cleanup
+  })
+}
+
 const queryClient = new QueryClient()
 
 const rootElement = document.getElementById('root')
