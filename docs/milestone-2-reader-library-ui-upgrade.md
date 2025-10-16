@@ -24,11 +24,11 @@ Milestone goal: deliver a cohesive responsive experience across library and read
   - ✓ Wired data fetching via Supabase repositories; added optimistic updates for queue toggles with rollback handling.
   - ✓ Tests: Unit tests for filter hooks and components; 33 library tests passing total.
 
-- [ ] **LIB-04 · Onboarding & empty state improvements**  
-  - Create guided empty state cards with illustrations, CTA to explore collections, and quick help link.  
-  - Show contextual insights (recent reads, recommendations) when library has content; right rail on desktop, modal on mobile.  
-  - Analytics event instrumentation for empty-state CTA (reuse existing logging utilities).  
-  - Tests: snapshot + e2e verifying modal accessibility (aria labels, focus trapping).
+- [x] **LIB-04 · Onboarding & empty state improvements** ✓ Complete (2025-10-16)
+  - ✓ Created guided empty state cards with illustrations, CTA to explore collections, and quick help link.
+  - ✓ Show contextual insights (recent reads, recommendations) when library has content; right rail on desktop, modal on mobile.
+  - ✓ Analytics event instrumentation for empty-state CTA (reuse existing logging utilities).
+  - ✓ Tests: snapshot + e2e verifying modal accessibility (aria labels, focus trapping).
 
 ## Phase 2 – Reader UX Enhancements
 
