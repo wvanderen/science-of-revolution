@@ -16,6 +16,10 @@ import { useParagraphNavigation } from '../hooks/useParagraphNavigation'
 import { ReaderPreferencesPanel } from '../../preferences/components/ReaderPreferencesPanel'
 import { EditDocumentModal } from '../components/EditDocumentModal'
 import { useQueryClient } from '@tanstack/react-query'
+import { PlanContextBanner } from '../components/PlanContextBanner'
+import { usePlanContextReader } from '../hooks/usePlanContextReader'
+import { useSession } from '../../../hooks/useSession'
+import { useResourceProgress } from '../../progress/hooks/useResourceProgress'
 
 function areHighlightListsEqual (
   previous: HighlightWithNote[] | undefined,
@@ -39,6 +43,35 @@ function areHighlightListsEqual (
   return true
 }
 
+function getHighlightsSignature (highlights: HighlightWithNote[]): string {
+  if (highlights.length === 0) return 'empty'
+
+  return highlights
+    .map(highlight => ({
+      id: highlight.id,
+      startPos: highlight.start_pos,
+      updatedAt: highlight.updated_at ?? '',
+      noteUpdatedAt: highlight.note?.updated_at ?? ''
+    }))
+    .sort((a, b) => {
+      if (a.startPos !== b.startPos) {
+        return a.startPos - b.startPos
+      }
+      return a.id.localeCompare(b.id)
+    })
+    .map(item => `${item.id}:${item.updatedAt}:${item.noteUpdatedAt}`)
+    .join('|')
+}
+
+function getProgressSignature (progressEntries: Array<{ resource_section_id: string, scroll_percent: number | null, status: string | null, updated_at: string | null }>): string {
+  if (progressEntries.length === 0) return 'empty'
+
+  return [...progressEntries]
+    .sort((a, b) => a.resource_section_id.localeCompare(b.resource_section_id))
+    .map(entry => `${entry.resource_section_id}:${entry.scroll_percent ?? 0}:${entry.status ?? 'unknown'}:${entry.updated_at ?? ''}`)
+    .join('|')
+}
+
 /**
  * Main reader page for viewing resource sections
  * URL params: /reader/:resourceId?section=:sectionId
@@ -49,13 +82,23 @@ export function ReaderPage (): JSX.Element {
   const { data: resource, isLoading, error } = useResource(resourceId)
   const { showToast } = useToast()
   const queryClient = useQueryClient()
+  const { session } = useSession()
   const sectionRefs = useRef(new Map<string, HTMLElement>())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const currentSectionIdRef = useRef<string | null>(null)
   const isProgrammaticScrollRef = useRef(false)
   const [sectionHighlights, setSectionHighlights] = useState<Record<string, HighlightWithNote[]>>({})
+  const highlightSignaturesRef = useRef<Record<string, string>>({})
   const lastReportedProgressRef = useRef<number | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const resumeScrollPercentRef = useRef<number | null>(null)
+  const hasInitializedSectionRef = useRef(false)
+  const isRestoringProgressRef = useRef(false)
+  const progressSignatureRef = useRef<string | null>(null)
+  const localScrollPercentRef = useRef(0)
+  const restoreTargetPercentRef = useRef<number | null>(null)
+  const restoreAttemptsRef = useRef(0)
+  const restoreFrameRef = useRef<number | null>(null)
   const registerSectionRef = useCallback((sectionId: string, element: HTMLElement | null) => {
     const refs = sectionRefs.current
 
@@ -145,16 +188,27 @@ export function ReaderPage (): JSX.Element {
 
   const { announcement: paragraphAnnouncement, focusedParagraphElement } = useParagraphNavigation({ contentRef: containerRef })
 
+  // Plan context tracking - automatically updates reading progress when in plan context
+  usePlanContextReader(resourceId, currentSectionId)
+
   // Fetch highlights for current section
   const { data: highlights = [] } = useHighlights(currentSectionId ?? undefined)
   useEffect(() => {
     if (currentSectionId == null) return
 
+    const nextSignature = getHighlightsSignature(highlights)
+    const previousSignature = highlightSignaturesRef.current[currentSectionId]
+
+    if (previousSignature === nextSignature) return
+
     setSectionHighlights(prev => {
       const existing = prev[currentSectionId]
       if (areHighlightListsEqual(existing, highlights)) {
+        highlightSignaturesRef.current[currentSectionId] = nextSignature
         return prev
       }
+
+      highlightSignaturesRef.current[currentSectionId] = nextSignature
       return {
         ...prev,
         [currentSectionId]: highlights
@@ -175,28 +229,194 @@ export function ReaderPage (): JSX.Element {
   const { data: progress } = useProgress(currentSectionId ?? undefined)
   const updateProgress = useUpdateProgress()
   const toggleCompleted = useToggleCompleted()
-  const sendProgressUpdate = useCallback((sectionId: string, percent: number) => {
-    updateProgress.mutate({ sectionId, scrollPercent: percent })
+  const { data: resourceProgress, isLoading: isResourceProgressLoading } = useResourceProgress(resourceId)
+
+  // Track the latest progress for save-on-unmount
+  const latestProgressRef = useRef<{ sectionId: string; percent: number; resourceId: string | null } | null>(null)
+  const updateProgressRef = useRef(updateProgress)
+  const sessionUserRef = useRef(session?.user ?? null)
+
+  useEffect(() => {
+    updateProgressRef.current = updateProgress
   }, [updateProgress])
+
+  useEffect(() => {
+    sessionUserRef.current = session?.user ?? null
+  }, [session?.user])
+
+  // Save progress before unmounting to prevent data loss
+  const flushLatestProgress = useCallback(() => {
+    const latest = latestProgressRef.current
+    const sessionUser = sessionUserRef.current
+    if (latest == null || sessionUser == null) return
+
+    lastReportedProgressRef.current = latest.percent
+    updateProgressRef.current.mutate({
+      sectionId: latest.sectionId,
+      scrollPercent: latest.percent,
+      resourceId: latest.resourceId ?? resourceId ?? undefined
+    })
+  }, [resourceId])
+
+  const cancelScheduledRestore = useCallback(() => {
+    if (restoreFrameRef.current != null) {
+      cancelAnimationFrame(restoreFrameRef.current)
+      restoreFrameRef.current = null
+    }
+  }, [])
+
+  const scheduleRestoreAttempt = useCallback(() => {
+    if (restoreTargetPercentRef.current == null) {
+      cancelScheduledRestore()
+      return
+    }
+
+    restoreAttemptsRef.current = 0
+
+    const attemptRestore = () => {
+      const target = restoreTargetPercentRef.current
+      if (target == null) {
+        cancelScheduledRestore()
+        isRestoringProgressRef.current = false
+        isProgrammaticScrollRef.current = false
+        return
+      }
+
+      const container = scrollContainerRef.current
+      if (container == null) {
+        restoreFrameRef.current = requestAnimationFrame(attemptRestore)
+        return
+      }
+
+      const scrollRange = container.scrollHeight - container.clientHeight
+      if (scrollRange <= 0) {
+        restoreFrameRef.current = requestAnimationFrame(attemptRestore)
+        return
+      }
+
+      const desiredTop = Math.max(0, (target / 100) * scrollRange)
+      const diffPx = Math.abs(container.scrollTop - desiredTop)
+
+      if (diffPx <= 1) {
+        restoreTargetPercentRef.current = null
+        restoreAttemptsRef.current = 0
+        isRestoringProgressRef.current = false
+        isProgrammaticScrollRef.current = false
+        cancelScheduledRestore()
+        return
+      }
+
+      isRestoringProgressRef.current = true
+      isProgrammaticScrollRef.current = true
+      container.scrollTo({ top: desiredTop, behavior: 'auto' })
+      restoreAttemptsRef.current += 1
+
+      if (restoreAttemptsRef.current >= 60) {
+        restoreTargetPercentRef.current = null
+        isRestoringProgressRef.current = false
+        cancelScheduledRestore()
+        window.setTimeout(() => {
+          isProgrammaticScrollRef.current = false
+        }, 80)
+        return
+      }
+
+      restoreFrameRef.current = requestAnimationFrame(attemptRestore)
+      window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false
+      }, 80)
+    }
+
+    cancelScheduledRestore()
+    restoreFrameRef.current = requestAnimationFrame(attemptRestore)
+  }, [cancelScheduledRestore])
+
+  useEffect(() => {
+    hasInitializedSectionRef.current = false
+    resumeScrollPercentRef.current = null
+    isRestoringProgressRef.current = false
+    progressSignatureRef.current = null
+    localScrollPercentRef.current = 0
+    restoreTargetPercentRef.current = null
+    restoreAttemptsRef.current = 0
+    cancelScheduledRestore()
+    latestProgressRef.current = null
+    setCurrentSectionId(null)
+  }, [resourceId, cancelScheduledRestore])
+
+  useEffect(() => {
+    return () => {
+      flushLatestProgress()
+    }
+  }, [flushLatestProgress])
+
+  useEffect(() => {
+    return () => {
+      cancelScheduledRestore()
+    }
+  }, [cancelScheduledRestore])
   const updateGlobalProgress = useCallback(() => {
     const container = scrollContainerRef.current
     if (container == null) return
+    const sessionUser = sessionUserRef.current
 
     const scrollHeight = container.scrollHeight - container.clientHeight
     const rawRatio = scrollHeight > 0 ? container.scrollTop / scrollHeight : 0
     const clampedRatio = Math.max(0, Math.min(rawRatio, 1))
     const percent = Math.round(clampedRatio * 100)
 
+    localScrollPercentRef.current = percent
+
+    const activeSectionId = currentSectionIdRef.current
+    if (activeSectionId != null) {
+      latestProgressRef.current = {
+        sectionId: activeSectionId,
+        percent,
+        resourceId: resourceId ?? null
+      }
+    }
+
+    const restoreTarget = restoreTargetPercentRef.current
+    if (restoreTarget != null) {
+      const diff = Math.abs(percent - restoreTarget)
+      if (diff <= 2) {
+        restoreTargetPercentRef.current = null
+        restoreAttemptsRef.current = 0
+        isRestoringProgressRef.current = false
+        cancelScheduledRestore()
+      }
+    }
+
     setLocalScrollPercent(percent)
 
-    const lastReported = lastReportedProgressRef.current
-    const activeSectionId = currentSectionIdRef.current
-
-    if (activeSectionId != null && (lastReported == null || Math.abs(percent - lastReported) >= 1)) {
-      lastReportedProgressRef.current = percent
-      sendProgressUpdate(activeSectionId, percent)
+    if (isRestoringProgressRef.current) {
+      return
     }
-  }, [sendProgressUpdate])
+
+    const lastReported = lastReportedProgressRef.current
+
+    // Update progress if: never reported before, changed by 5%, or reached 100%
+    const shouldUpdate = activeSectionId != null && (
+      lastReported == null ||
+      Math.abs(percent - lastReported) >= 5 ||
+      percent === 100
+    )
+
+    if (shouldUpdate) {
+      if (sessionUser == null) return
+      lastReportedProgressRef.current = percent
+      latestProgressRef.current = {
+        sectionId: activeSectionId,
+        percent,
+        resourceId: resourceId ?? null
+      }
+      updateProgressRef.current.mutate({
+        sectionId: activeSectionId,
+        scrollPercent: percent,
+        resourceId: resourceId ?? undefined
+      })
+    }
+  }, [resourceId])
 
   useEffect(() => {
     const container = scrollContainerRef.current
@@ -224,26 +444,214 @@ export function ReaderPage (): JSX.Element {
     })
   }, [currentSectionId, updateGlobalProgress])
 
-  // Initialize current section when resource loads
+  // Initialize current section when resource and progress data are ready
   useEffect(() => {
-    if (resource?.sections != null && resource.sections.length > 0) {
-      if (urlSectionId != null) {
-        // Use section from URL if valid
-        const sectionExists = resource.sections.some(s => s.id === urlSectionId)
-        setCurrentSectionId(sectionExists ? urlSectionId : resource.sections[0].id)
-      } else {
-        // Default to first section
-        setCurrentSectionId(resource.sections[0].id)
+    if (resource?.sections == null || resource.sections.length === 0) return
+    if (isResourceProgressLoading) return
+
+    const sections = resource.sections
+    const sectionById = new Map(sections.map(section => [section.id, section]))
+    const progressList = (resourceProgress ?? []).filter(entry => sectionById.has(entry.resource_section_id))
+    const progressSignature = getProgressSignature(progressList)
+    const canReinitialize = !hasInitializedSectionRef.current || localScrollPercentRef.current <= 5
+
+    if (!canReinitialize) {
+      progressSignatureRef.current = progressSignature
+      return
+    }
+
+    if (hasInitializedSectionRef.current && progressSignatureRef.current === progressSignature) {
+      return
+    }
+
+    progressSignatureRef.current = progressSignature
+
+    const resolveFromUrl = (): { sectionId: string | null, percent: number | null } => {
+      if (urlSectionId == null) return { sectionId: null, percent: null }
+      if (!sectionById.has(urlSectionId)) return { sectionId: null, percent: null }
+
+      const matching = progressList.find(entry => entry.resource_section_id === urlSectionId)
+      return {
+        sectionId: urlSectionId,
+        percent: matching?.scroll_percent ?? null
       }
     }
-  }, [resource, urlSectionId])
+
+    const resolveFromProgress = (): { sectionId: string | null, percent: number | null } => {
+      if (progressList.length === 0) {
+        return { sectionId: sections[0]?.id ?? null, percent: 0 }
+      }
+
+      const inProgressEntries = progressList
+        .filter(entry => entry.status === 'in_progress')
+        .map(entry => ({
+          entry,
+          scrollPercent: entry.scroll_percent ?? 0,
+          updatedAt: entry.updated_at != null ? new Date(entry.updated_at).getTime() : 0
+        }))
+        .sort((a, b) => {
+          if (a.scrollPercent !== b.scrollPercent) {
+            return b.scrollPercent - a.scrollPercent
+          }
+          return b.updatedAt - a.updatedAt
+        })
+
+      if (inProgressEntries.length > 0) {
+        const target = inProgressEntries[0]
+        return {
+          sectionId: target.entry.resource_section_id,
+          percent: target.scrollPercent
+        }
+      }
+
+      const completedEntries = progressList
+        .filter(entry => entry.status === 'completed')
+        .map(entry => {
+          const section = sectionById.get(entry.resource_section_id)
+          return {
+            entry,
+            order: section?.order ?? -1,
+            updatedAt: entry.updated_at != null ? new Date(entry.updated_at).getTime() : 0
+          }
+        })
+        .sort((a, b) => {
+          if (a.order !== b.order) {
+            return b.order - a.order
+          }
+          return b.updatedAt - a.updatedAt
+        })
+
+      if (completedEntries.length > 0) {
+        const latestCompleted = completedEntries[0]
+        const currentSection = sectionById.get(latestCompleted.entry.resource_section_id)
+        if (currentSection != null) {
+          const nextSection = sections.find(section => section.order > currentSection.order)
+          if (nextSection != null) {
+            return { sectionId: nextSection.id, percent: 0 }
+          }
+          return {
+            sectionId: currentSection.id,
+            percent: latestCompleted.entry.scroll_percent ?? 100
+          }
+        }
+      }
+
+      return { sectionId: sections[0]?.id ?? null, percent: 0 }
+    }
+
+    const fromUrl = resolveFromUrl()
+    const chosen = fromUrl.sectionId != null ? fromUrl : resolveFromProgress()
+
+    if (chosen.sectionId != null) {
+      hasInitializedSectionRef.current = true
+      resumeScrollPercentRef.current = chosen.percent ?? null
+      isRestoringProgressRef.current = (chosen.percent ?? 0) > 0
+      setCurrentSectionId(chosen.sectionId)
+      const normalizedPercent = chosen.percent != null
+        ? Math.max(0, Math.min(100, Math.round(chosen.percent)))
+        : null
+
+      if (normalizedPercent != null) {
+        setLocalScrollPercent(normalizedPercent)
+        localScrollPercentRef.current = normalizedPercent
+        restoreTargetPercentRef.current = normalizedPercent
+        restoreAttemptsRef.current = 0
+        scheduleRestoreAttempt()
+      } else {
+        setLocalScrollPercent(0)
+        localScrollPercentRef.current = 0
+        restoreTargetPercentRef.current = 0
+        restoreAttemptsRef.current = 0
+        scheduleRestoreAttempt()
+      }
+    }
+  }, [resource, resourceProgress, isResourceProgressLoading, urlSectionId, scheduleRestoreAttempt])
 
   useEffect(() => {
+    if (currentSectionId == null) return
+
+    const pendingPercent = resumeScrollPercentRef.current
+    if (pendingPercent != null && pendingPercent > 0) {
+      const container = scrollContainerRef.current
+      if (container != null) {
+        isRestoringProgressRef.current = true
+        isProgrammaticScrollRef.current = true
+        requestAnimationFrame(() => {
+          const scrollHeight = container.scrollHeight - container.clientHeight
+          const targetScrollTop = scrollHeight > 0 ? (pendingPercent / 100) * scrollHeight : 0
+          container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'auto'
+          })
+
+          const normalized = Math.max(0, Math.min(100, Math.round(pendingPercent)))
+          localScrollPercentRef.current = normalized
+          setLocalScrollPercent(normalized)
+          latestProgressRef.current = {
+            sectionId: currentSectionId,
+            percent: pendingPercent,
+            resourceId: resourceId ?? null
+          }
+          lastReportedProgressRef.current = pendingPercent
+          restoreTargetPercentRef.current = normalized
+          restoreAttemptsRef.current = 0
+          scheduleRestoreAttempt()
+
+          window.setTimeout(() => {
+            isProgrammaticScrollRef.current = false
+            isRestoringProgressRef.current = false
+            updateGlobalProgress()
+          }, 300)
+        })
+      } else {
+        isRestoringProgressRef.current = false
+      }
+    } else if (pendingPercent === 0) {
+      latestProgressRef.current = {
+        sectionId: currentSectionId,
+        percent: 0,
+        resourceId: resourceId ?? null
+      }
+      localScrollPercentRef.current = 0
+      setLocalScrollPercent(0)
+      lastReportedProgressRef.current = 0
+      restoreTargetPercentRef.current = 0
+      restoreAttemptsRef.current = 0
+      scheduleRestoreAttempt()
+      isRestoringProgressRef.current = false
+    }
+
+    resumeScrollPercentRef.current = null
+  }, [currentSectionId, resourceId, updateGlobalProgress, scheduleRestoreAttempt])
+
+  useEffect(() => {
+    if (currentSectionId == null) return
+
+    if (resourceProgress != null) {
+      const existing = resourceProgress.find(entry => entry.resource_section_id === currentSectionId)
+      if (existing?.scroll_percent != null) {
+        lastReportedProgressRef.current = existing.scroll_percent
+        latestProgressRef.current = {
+          sectionId: currentSectionId,
+          percent: existing.scroll_percent,
+          resourceId: resourceId ?? null
+        }
+        return
+      }
+    }
+
     lastReportedProgressRef.current = null
-  }, [currentSectionId])
+  }, [currentSectionId, resourceProgress, resourceId])
 
   // Update URL when section changes
   const handleSectionChange = (sectionId: string): void => {
+    flushLatestProgress()
+    latestProgressRef.current = null
+    localScrollPercentRef.current = 0
+    setLocalScrollPercent(0)
+    restoreTargetPercentRef.current = null
+    restoreAttemptsRef.current = 0
+    cancelScheduledRestore()
     setCurrentSectionId(sectionId)
 
     const sectionElement = sectionRefs.current.get(sectionId)
@@ -273,6 +681,11 @@ export function ReaderPage (): JSX.Element {
   }
 
   const handleClose = (): void => {
+    flushLatestProgress()
+    latestProgressRef.current = null
+    restoreTargetPercentRef.current = null
+    restoreAttemptsRef.current = 0
+    cancelScheduledRestore()
     // Check if we came from an education plan context
     const searchParams = new URLSearchParams(window.location.search)
     const planId = searchParams.get('planId')
@@ -419,6 +832,10 @@ export function ReaderPage (): JSX.Element {
 
   const handleToggleCompleted = (): void => {
     if (currentSectionId == null) return
+    if (session?.user == null) {
+      showToast('Please sign in to update progress', { type: 'info' })
+      return
+    }
 
     const isCompleted = progress?.status === 'completed'
     toggleCompleted.mutate({
@@ -615,6 +1032,9 @@ export function ReaderPage (): JSX.Element {
 
   return (
     <ReaderLayout>
+      {/* Plan context banner - shows when reading from an education plan */}
+      <PlanContextBanner />
+
       {/* Fixed header that stays at top */}
       <ReaderToolbar
         sections={resource.sections}

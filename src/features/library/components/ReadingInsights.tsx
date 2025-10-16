@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAnalytics } from '../../../lib/analytics'
 
@@ -93,7 +92,7 @@ export function ReadingInsights({
           <div className="space-y-3">
             {insights.recentReading.map((item: any) => (
               <Link
-                key={item.id}
+                key={`recent-${item.id}-${item.resource.id}`}
                 to={`/reader/${item.resource.id}`}
                 onClick={() => handleRecentReadingClick(item.id)}
                 className="block group"
@@ -148,9 +147,9 @@ export function ReadingInsights({
 
         {insights?.recommendations && insights.recommendations.length > 0 ? (
           <div className="space-y-3">
-            {insights.recommendations.map((rec: any) => (
+            {insights.recommendations.map((rec: any, index: number) => (
               <Link
-                key={rec.id}
+                key={`rec-${rec.id}-${index}`}
                 to={`/library/${rec.id}`}
                 onClick={() => handleRecommendationClick(rec.id, rec.reason)}
                 className="block group"

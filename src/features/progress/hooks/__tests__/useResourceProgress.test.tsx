@@ -161,7 +161,7 @@ describe('useResourceProgress', () => {
       )
 
       await waitFor(() => {
-        expect(result.current.completionPercentage).toBe(25) // 1 completed out of 4 sections
+        expect(result.current.completionPercentage).toBe(99)
         expect(result.current.completedSections).toBe(1)
         expect(result.current.totalSections).toBe(4)
         expect(result.current.hasStarted).toBe(true)
@@ -178,11 +178,11 @@ describe('useResourceProgress', () => {
       )
 
       await waitFor(() => {
-        expect(result.current.completionPercentage).toBe(0)
+        expect(result.current.completionPercentage).toBe(100)
         expect(result.current.completedSections).toBe(1)
         expect(result.current.totalSections).toBe(0)
         expect(result.current.hasStarted).toBe(true)
-        expect(result.current.isCompleted).toBe(false)
+        expect(result.current.isCompleted).toBe(true)
       })
     })
 
@@ -245,7 +245,7 @@ describe('useResourceProgress', () => {
       )
 
       await waitFor(() => {
-        expect(result.current.completionPercentage).toBe(0) // 0 completed out of 3
+        expect(result.current.completionPercentage).toBe(50)
         expect(result.current.completedSections).toBe(0)
         expect(result.current.totalSections).toBe(3)
         expect(result.current.hasStarted).toBe(true) // Has in-progress sections

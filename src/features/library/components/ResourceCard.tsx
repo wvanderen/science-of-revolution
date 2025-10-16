@@ -26,11 +26,13 @@ export function ResourceCard ({
 }: ResourceCardProps): JSX.Element {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const { data: profile, isFacilitator } = useProfile()
+  const { data: _profile, isFacilitator } = useProfile()
 
+  const computedSectionCount = resource.sections?.length ?? sectionCount
   const { completionPercentage, hasStarted, isCompleted } = useResourceCompletion(
     resource.id,
-    sectionCount
+    computedSectionCount,
+    resource.sections
   )
 
   const readingTime = Math.ceil(totalWords / 200) // Assuming 200 words per minute

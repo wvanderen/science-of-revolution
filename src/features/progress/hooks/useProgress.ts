@@ -37,6 +37,7 @@ export function useUpdateProgress () {
     mutationFn: async (params: {
       sectionId: string
       scrollPercent: number
+      resourceId?: string
     }): Promise<Progress> => {
       if (session?.user == null) {
         throw new Error('User must be authenticated to track progress')
@@ -49,10 +50,29 @@ export function useUpdateProgress () {
         params.scrollPercent
       )
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      // Update cache immediately for optimistic UI
+      if (session?.user?.id) {
+        queryClient.setQueryData(['progress', session.user.id, variables.sectionId], data)
+      }
+
       void queryClient.invalidateQueries({
         queryKey: ['progress', session?.user?.id, variables.sectionId]
       })
+
+      if (variables.resourceId != null && session?.user?.id != null) {
+        void queryClient.invalidateQueries({
+          queryKey: ['resource-progress', session.user.id, variables.resourceId]
+        })
+
+        void queryClient.invalidateQueries({
+          queryKey: ['resource-progress-map', session.user.id],
+          exact: false
+        })
+      }
+    },
+    onError: (error, variables) => {
+      console.error('Failed to update progress:', error, 'for section:', variables.sectionId)
     }
   })
 }

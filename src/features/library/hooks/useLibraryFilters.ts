@@ -1,4 +1,4 @@
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useMemo } from 'react'
 import type { LibraryView, ResourceStatus, ResourceLength } from '../components/LibraryFilterBar'
 
@@ -56,6 +56,7 @@ export function useLibraryFilters(): LibraryFilters & LibraryFilterActions {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Read filters from URL params with explicit reactivity
+  const searchParamsString = searchParams.toString()
   const filters = useMemo((): LibraryFilters => {
     const viewParam = searchParams.get(FILTER_PARAMS.VIEW)
     const statusParam = searchParams.get(FILTER_PARAMS.STATUS)
@@ -68,7 +69,7 @@ export function useLibraryFilters(): LibraryFilters & LibraryFilterActions {
       lengthFilter: isValidResourceLength(lengthParam) ? lengthParam as ResourceLength : DEFAULT_FILTERS.lengthFilter,
       typeFilter: searchParams.get(FILTER_PARAMS.TYPE) ?? DEFAULT_FILTERS.typeFilter
     }
-  }, [searchParams.toString()]) // Using toString() to ensure reactivity
+  }, [searchParamsString]) // Using string to ensure reactivity
 
   // Update URL params helper
   const updateParams = (updates: Partial<LibraryFilters>) => {

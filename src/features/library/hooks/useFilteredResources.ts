@@ -41,7 +41,7 @@ export function useFilteredResources(
     if (!resources) return []
 
     return resources.filter((resource) => {
-      const { searchQuery, view, statusFilter, lengthFilter, typeFilter } = criteria
+      const { searchQuery, lengthFilter, typeFilter } = criteria
 
       // Text search (title and author)
       if (searchQuery) {
@@ -109,33 +109,60 @@ export function useViewFilteredResources(
 function useResourceProgressMap(resources: ResourceWithSections[] | undefined) {
   const { session } = useSession()
   const supabase = useSupabase()
+  const sectionIndex = useMemo(() => {
+    if (!resources) {
+      return {
+        sectionIds: [] as string[],
+        sectionToResourceId: new Map<string, string>(),
+        cacheKey: ''
+      }
+    }
+
+    const sectionToResourceId = new Map<string, string>()
+    const sectionIds: string[] = []
+
+    resources.forEach(resource => {
+      resource.sections?.forEach(section => {
+        sectionIds.push(section.id)
+        sectionToResourceId.set(section.id, resource.id)
+      })
+    })
+
+    const cacheKey = sectionIds.sort().join(',')
+
+    return {
+      sectionIds,
+      sectionToResourceId,
+      cacheKey
+    }
+  }, [resources])
 
   return useQuery({
-    queryKey: ['resource-progress-map', session?.user?.id, resources?.map(r => r.id).join(',')],
+    queryKey: ['resource-progress-map', session?.user?.id, sectionIndex.cacheKey],
     queryFn: async (): Promise<Record<string, any[]>> => {
-      if (!session?.user?.id || !resources) return {}
+      if (!session?.user?.id || sectionIndex.sectionIds.length === 0) return {}
 
-      const resourceIds = resources.map(r => r.id)
       const { data, error } = await supabase
         .from('progress')
         .select('*')
-        .in('resource_section_id', resourceIds)
+        .in('resource_section_id', sectionIndex.sectionIds)
         .eq('user_id', session.user.id)
 
       if (error) throw error
 
-      // Group by resource_id (need to join with resource_sections to get resource_id)
       return (data ?? []).reduce((acc, progress) => {
-        // For now, we'll use section_id as a proxy
-        const resourceId = progress.resource_section_id
-        if (!acc[resourceId]) {
+        const resourceId = sectionIndex.sectionToResourceId.get(progress.resource_section_id)
+        if (resourceId == null) return acc
+
+        if (acc[resourceId] == null) {
           acc[resourceId] = []
         }
+
         acc[resourceId].push(progress)
         return acc
       }, {} as Record<string, any[]>)
     },
-    enabled: !!session?.user?.id && !!resources?.length
+    enabled: !!session?.user?.id && sectionIndex.sectionIds.length > 0
   })
 }
 

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../../../components/providers/SupabaseProvider'
 import { useSession } from '../../../hooks/useSession'
-import { PlanEnrollmentRepository, type UserPlanProgressData, type UserTopicProgressData } from '../../../lib/repositories/planEnrollment'
+import { PlanEnrollmentRepository, type UserPlanProgressData, type UserTopicProgressData, type UserPlanProgressWithPlan } from '../../../lib/repositories/planEnrollment'
 
 export interface UserPlanProgress {
   id: string
@@ -58,11 +58,11 @@ export function useUserEnrollments() {
   const supabase = useSupabase()
   const repository = new PlanEnrollmentRepository(supabase)
 
-  return useQuery({
+  return useQuery<UserPlanProgressWithPlan[]>({
     queryKey: ['user-enrollments', session?.user?.id],
-    queryFn: () => {
+    queryFn: async () => {
       if (!session?.user?.id) return []
-      return repository.getUserEnrollments(session.user.id)
+      return await repository.getUserEnrollments(session.user.id)
     },
     enabled: !!session?.user?.id,
     staleTime: 2 * 60 * 1000,
@@ -404,8 +404,11 @@ export function useUpdateReadingProgress() {
       // Update cache
       queryClient.setQueryData(['topic-progress', variables.topicId, session?.user?.id], updatedProgress)
 
-      // Invalidate relevant queries
+      // Invalidate all relevant queries to ensure UI updates everywhere
       queryClient.invalidateQueries({ queryKey: ['user-plan-topic-progress'] })
+      queryClient.invalidateQueries({ queryKey: ['topic-progress', variables.topicId] })
+      queryClient.invalidateQueries({ queryKey: ['plan-enrollment'] })
+      queryClient.invalidateQueries({ queryKey: ['user-enrollments', session?.user?.id] })
     },
     onError: (error) => {
       console.error('Failed to update reading progress:', error)

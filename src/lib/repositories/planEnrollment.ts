@@ -8,6 +8,17 @@ type UserPlanProgressUpdate = Database['public']['Tables']['user_plan_progress']
 type UserTopicProgress = Database['public']['Tables']['user_topic_progress']['Row']
 type UserTopicProgressUpdate = Database['public']['Tables']['user_topic_progress']['Update']
 
+export type UserPlanProgressWithPlan = UserPlanProgress & {
+  education_plans: {
+    id: string
+    title: string
+    description: string | null
+    difficulty_level: 'beginner' | 'intermediate' | 'advanced' | null
+    estimated_weeks: number | null
+    is_published: boolean
+  }
+}
+
 export interface EnrollmentData {
   userId: string
   planId: string
@@ -103,7 +114,7 @@ export class PlanEnrollmentRepository {
   /**
    * Get all enrollments for a user
    */
-  async getUserEnrollments(userId: string): Promise<UserPlanProgress[]> {
+  async getUserEnrollments(userId: string): Promise<UserPlanProgressWithPlan[]> {
     const { data, error } = await this.supabase
       .from('user_plan_progress')
       .select(`
@@ -124,7 +135,12 @@ export class PlanEnrollmentRepository {
       throw new Error(`Failed to get user enrollments: ${error.message}`)
     }
 
-    return data || []
+    return (data?.map(item => ({
+      ...item,
+      education_plans: Array.isArray(item.education_plans)
+        ? item.education_plans[0]
+        : item.education_plans
+    })) as UserPlanProgressWithPlan[]) || []
   }
 
   /**
@@ -348,8 +364,30 @@ export class PlanEnrollmentRepository {
    * Update reading progress within a topic
    */
   async updateReadingProgress(userId: string, topicId: string, resourceId: string, progressPercent: number): Promise<UserTopicProgress> {
-    // Get current topic progress
-    const currentProgress = await this.getTopicProgress(userId, topicId)
+    // Get current topic progress, or create if doesn't exist
+    let currentProgress = await this.getTopicProgress(userId, topicId)
+
+    // If no progress record exists, create one
+    if (currentProgress == null) {
+      const { data: newProgress, error } = await this.supabase
+        .from('user_topic_progress')
+        .insert({
+          user_id: userId,
+          topic_id: topicId,
+          status: 'in_progress',
+          progress_percentage: 0,
+          reading_progress: {}
+        })
+        .select()
+        .single()
+
+      if (error != null) {
+        throw new Error(`Failed to create topic progress: ${error.message}`)
+      }
+
+      currentProgress = newProgress
+    }
+
     const readingProgress = currentProgress?.reading_progress as Record<string, number> || {}
 
     // Update reading progress
@@ -362,10 +400,21 @@ export class PlanEnrollmentRepository {
       ? readingProgressValues.reduce((sum, progress) => sum + progress, 0) / readingProgressValues.length
       : 0
 
-    return this.updateTopicProgress(userId, topicId, {
+    // Determine status based on progress
+    const status = averageProgress >= 100 ? 'completed' : averageProgress > 0 ? 'in_progress' : 'not_started'
+
+    const updatedProgress = await this.updateTopicProgress(userId, topicId, {
+      status,
       progressPercentage: Math.round(averageProgress),
       readingProgress
     })
+
+    // If topic is completed, recalculate plan progress
+    if (status === 'completed') {
+      await this.recalculatePlanProgress(userId, topicId)
+    }
+
+    return updatedProgress
   }
 
   /**

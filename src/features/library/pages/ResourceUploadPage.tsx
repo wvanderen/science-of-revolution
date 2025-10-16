@@ -69,7 +69,7 @@ export function ResourceUploadPage (): JSX.Element {
   const ingestResource = useIngestResource()
   const supabase = useSupabase()
   const { showToast } = useToast()
-  const { data: profile, isLoading: profileLoading, isFacilitator } = useProfile()
+  const { data: _profile, isLoading: profileLoading, isFacilitator } = useProfile()
   const navigate = useNavigate()
 
   const totalWordCount = useMemo(() => {

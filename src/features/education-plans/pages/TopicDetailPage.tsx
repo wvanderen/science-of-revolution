@@ -164,6 +164,13 @@ export function TopicDetailPage() {
   const isInProgress = progress?.status === 'in_progress'
   const isNotStarted = !progress || progress.status === 'not_started'
 
+  // Get reading progress for individual readings
+  const getReadingProgress = (resourceId: string): number => {
+    if (!progress?.reading_progress) return 0
+    const readingProgressData = progress.reading_progress as Record<string, number>
+    return readingProgressData[resourceId] || 0
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -300,34 +307,59 @@ export function TopicDetailPage() {
                 Required Readings ({requiredCount})
               </h2>
               <div className="space-y-3">
-                {categorizedReadings.required.map((reading) => (
-                  <div
-                    key={reading.id}
-                    onClick={() => handleReadingClick(reading.resource_id)}
-                    className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
-                  >
-                    <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                      {getReadingIcon(reading.resources.type)}
+                {categorizedReadings.required.map((reading) => {
+                  const readingProgress = getReadingProgress(reading.resource_id)
+                  const isReadingComplete = readingProgress >= 100
+
+                  return (
+                    <div
+                      key={reading.id}
+                      onClick={() => handleReadingClick(reading.resource_id)}
+                      className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
+                    >
+                      <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                        {getReadingIcon(reading.resources.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {reading.resources.title}
+                          </h3>
+                          {isReadingComplete && (
+                            <span className="flex-shrink-0">
+                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        {reading.resources.author && (
+                          <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
+                        )}
+                        {reading.resources.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
+                        )}
+                        {reading.notes && (
+                          <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
+                        )}
+                        {readingProgress > 0 && (
+                          <div className="mt-2">
+                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${isReadingComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                style={{ width: `${readingProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{Math.round(readingProgress)}% complete</p>
+                          </div>
+                        )}
+                      </div>
+                      <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
-                        {reading.resources.title}
-                      </h3>
-                      {reading.resources.author && (
-                        <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
-                      )}
-                      {reading.resources.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
-                      )}
-                      {reading.notes && (
-                        <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -340,34 +372,59 @@ export function TopicDetailPage() {
                 Further Reading ({categorizedReadings.further.length})
               </h2>
               <div className="space-y-3">
-                {categorizedReadings.further.map((reading) => (
-                  <div
-                    key={reading.id}
-                    onClick={() => handleReadingClick(reading.resource_id)}
-                    className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
-                  >
-                    <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                      {getReadingIcon(reading.resources.type)}
+                {categorizedReadings.further.map((reading) => {
+                  const readingProgress = getReadingProgress(reading.resource_id)
+                  const isReadingComplete = readingProgress >= 100
+
+                  return (
+                    <div
+                      key={reading.id}
+                      onClick={() => handleReadingClick(reading.resource_id)}
+                      className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
+                    >
+                      <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                        {getReadingIcon(reading.resources.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {reading.resources.title}
+                          </h3>
+                          {isReadingComplete && (
+                            <span className="flex-shrink-0">
+                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        {reading.resources.author && (
+                          <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
+                        )}
+                        {reading.resources.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
+                        )}
+                        {reading.notes && (
+                          <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
+                        )}
+                        {readingProgress > 0 && (
+                          <div className="mt-2">
+                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${isReadingComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                style={{ width: `${readingProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{Math.round(readingProgress)}% complete</p>
+                          </div>
+                        )}
+                      </div>
+                      <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
-                        {reading.resources.title}
-                      </h3>
-                      {reading.resources.author && (
-                        <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
-                      )}
-                      {reading.resources.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
-                      )}
-                      {reading.notes && (
-                        <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -380,34 +437,59 @@ export function TopicDetailPage() {
                 Optional Reading ({categorizedReadings.optional.length})
               </h2>
               <div className="space-y-3">
-                {categorizedReadings.optional.map((reading) => (
-                  <div
-                    key={reading.id}
-                    onClick={() => handleReadingClick(reading.resource_id)}
-                    className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
-                  >
-                    <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                      {getReadingIcon(reading.resources.type)}
+                {categorizedReadings.optional.map((reading) => {
+                  const readingProgress = getReadingProgress(reading.resource_id)
+                  const isReadingComplete = readingProgress >= 100
+
+                  return (
+                    <div
+                      key={reading.id}
+                      onClick={() => handleReadingClick(reading.resource_id)}
+                      className="flex items-start gap-4 p-4 border border-border rounded-lg hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer group"
+                    >
+                      <div className="text-muted-foreground group-hover:text-primary transition-colors">
+                        {getReadingIcon(reading.resources.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {reading.resources.title}
+                          </h3>
+                          {isReadingComplete && (
+                            <span className="flex-shrink-0">
+                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        {reading.resources.author && (
+                          <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
+                        )}
+                        {reading.resources.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
+                        )}
+                        {reading.notes && (
+                          <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
+                        )}
+                        {readingProgress > 0 && (
+                          <div className="mt-2">
+                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${isReadingComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                style={{ width: `${readingProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{Math.round(readingProgress)}% complete</p>
+                          </div>
+                        )}
+                      </div>
+                      <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
-                        {reading.resources.title}
-                      </h3>
-                      {reading.resources.author && (
-                        <p className="text-sm text-muted-foreground mb-1">by {reading.resources.author}</p>
-                      )}
-                      {reading.resources.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{reading.resources.description}</p>
-                      )}
-                      {reading.notes && (
-                        <p className="text-sm text-primary mt-2 italic">Note: {reading.notes}</p>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

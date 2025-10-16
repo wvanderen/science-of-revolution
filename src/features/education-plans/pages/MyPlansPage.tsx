@@ -2,29 +2,9 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserEnrollments } from '../hooks/usePlanEnrollment'
 import { useSession } from '../../../hooks/useSession'
+import type { UserPlanProgressWithPlan } from '../../../lib/repositories/planEnrollment'
 
 type TabType = 'all' | 'not_started' | 'in_progress' | 'completed'
-
-interface EnrolledPlan {
-  id: string
-  user_id: string
-  education_plan_id: string
-  status: 'not_started' | 'in_progress' | 'completed'
-  started_at: string | null
-  completed_at: string | null
-  current_topic_id: string | null
-  progress_percentage: number
-  created_at: string
-  updated_at: string
-  education_plans: {
-    id: string
-    title: string
-    description: string | null
-    difficulty_level: 'beginner' | 'intermediate' | 'advanced' | null
-    estimated_weeks: number | null
-    is_published: boolean
-  }
-}
 
 /**
  * Page displaying all plans the user is enrolled in
@@ -32,24 +12,22 @@ interface EnrolledPlan {
 export function MyPlansPage() {
   const navigate = useNavigate()
   const { session } = useSession()
-  const { data: enrollments, isLoading } = useUserEnrollments()
+  const { data: enrollments = [], isLoading } = useUserEnrollments()
   const [activeTab, setActiveTab] = useState<TabType>('all')
 
   // Filter enrollments based on active tab
-  const filteredEnrollments = useMemo(() => {
-    if (!enrollments) return []
+  const filteredEnrollments = useMemo<UserPlanProgressWithPlan[]>(() => {
     if (activeTab === 'all') return enrollments
-    return enrollments.filter((e: EnrolledPlan) => e.status === activeTab)
+    return enrollments.filter((enrollment) => enrollment.status === activeTab)
   }, [enrollments, activeTab])
 
   // Count enrollments by status
   const counts = useMemo(() => {
-    if (!enrollments) return { all: 0, not_started: 0, in_progress: 0, completed: 0 }
     return {
       all: enrollments.length,
-      not_started: enrollments.filter((e: EnrolledPlan) => e.status === 'not_started').length,
-      in_progress: enrollments.filter((e: EnrolledPlan) => e.status === 'in_progress').length,
-      completed: enrollments.filter((e: EnrolledPlan) => e.status === 'completed').length
+      not_started: enrollments.filter((enrollment) => enrollment.status === 'not_started').length,
+      in_progress: enrollments.filter((enrollment) => enrollment.status === 'in_progress').length,
+      completed: enrollments.filter((enrollment) => enrollment.status === 'completed').length
     }
   }, [enrollments])
 
@@ -193,7 +171,7 @@ export function MyPlansPage() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredEnrollments.map((enrollment: EnrolledPlan) => {
+          {filteredEnrollments.map((enrollment: UserPlanProgressWithPlan) => {
             const plan = enrollment.education_plans
             const isInProgress = enrollment.status === 'in_progress'
             const isCompleted = enrollment.status === 'completed'

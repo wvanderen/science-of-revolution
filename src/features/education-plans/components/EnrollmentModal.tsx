@@ -120,7 +120,7 @@ export function EnrollmentModal({ planId, isOpen, onClose, isEnrolled = false }:
 
               {/* Topics Overview */}
               <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-3">What you'll learn</h4>
+                <h4 className="font-semibold text-foreground mb-3">What you&apos;ll learn</h4>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary">{totalTopics}</div>
@@ -174,7 +174,7 @@ export function EnrollmentModal({ planId, isOpen, onClose, isEnrolled = false }:
                     Are you sure you want to unenroll?
                   </p>
                   <p className="text-sm text-yellow-800">
-                    Your progress will be saved, but you'll need to re-enroll to continue learning.
+                    Your progress will be saved, but you&apos;ll need to re-enroll to continue learning.
                   </p>
                 </div>
               )}

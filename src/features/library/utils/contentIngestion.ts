@@ -178,8 +178,6 @@ export function detectAndConvertHeaders (text: string): string {
       return line
     }
 
-    const lowerTrimmed = trimmed.toLowerCase()
-
     // Detect potential headers based on common patterns:
 
     // 1. All caps lines (likely section titles) - strong signal
