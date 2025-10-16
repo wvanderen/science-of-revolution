@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEducationPlan, useCanEditPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
-import { usePlanEnrollment, useEnrollInPlan } from '../hooks/usePlanEnrollment'
+import { usePlanEnrollment } from '../hooks/usePlanEnrollment'
 import { useCalculatedPlanProgress } from '../hooks/useCalculatedPlanProgress'
 import { useSession } from '../../../hooks/useSession'
 import { TopicList } from './TopicList'
 import { useAnalytics } from '../../../lib/analytics'
 import { PlanManagementPanel } from './PlanManagementPanel'
+import { EnrollmentModal } from './EnrollmentModal'
 
 interface PlanDetailViewProps {
   planId: string
@@ -25,27 +26,13 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
   const { data: topics } = usePlanTopics(planId)
   const { data: enrollment } = usePlanEnrollment(planId, session?.user?.id)
   const { data: calculatedProgress } = useCalculatedPlanProgress(planId)
-  const enrollInPlan = useEnrollInPlan()
   const { trackInteraction } = useAnalytics()
   const { data: canEditPlan } = useCanEditPlan(planId)
 
-  const [showEnrollConfirm, setShowEnrollConfirm] = useState(false)
+  const [showEnrollModal, setShowEnrollModal] = useState(false)
 
   const handleTopicClick = (topicId: string) => {
     navigate(`/education-plans/topics/${topicId}`)
-  }
-
-  const handleEnroll = async () => {
-    if (!session?.user?.id) return
-
-    try {
-      await enrollInPlan.mutateAsync(planId)
-
-      setShowEnrollConfirm(false)
-      trackInteraction('plan_detail', 'enrolled', { planId })
-    } catch (error) {
-      console.error('Failed to enroll in plan:', error)
-    }
   }
 
   const handleStartLearning = () => {
@@ -225,7 +212,10 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
         <div className="flex items-center space-x-3">
           {enrollmentStatus === 'not_enrolled' ? (
             <button
-              onClick={() => setShowEnrollConfirm(true)}
+              onClick={() => {
+                setShowEnrollModal(true)
+                trackInteraction('plan_detail', 'clicked_enroll', { planId })
+              }}
               className="px-6 py-3 bg-primary text-primary-foreground text-base font-semibold rounded-md hover:bg-primary/90 transition-colors"
             >
               Enroll in Plan
@@ -258,37 +248,13 @@ export function PlanDetailView({ planId, onBack, onStartLearning }: PlanDetailVi
         </div>
       )}
 
-      {/* Enrollment Confirmation Modal */}
-      {showEnrollConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-foreground mb-4">Enroll in this plan?</h3>
-
-            <p className="text-sm text-muted-foreground mb-6">
-              You&apos;re about to enroll in <span className="font-medium text-foreground">&ldquo;{plan.title}&rdquo;</span>.
-              This plan includes {topicCount} topic{topicCount !== 1 ? 's' : ''} and takes approximately{' '}
-              {plan.estimated_weeks} week{plan.estimated_weeks !== 1 ? 's' : ''} to complete.
-            </p>
-
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                onClick={() => setShowEnrollConfirm(false)}
-                disabled={enrollInPlan.isPending}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEnroll}
-                disabled={enrollInPlan.isPending}
-                className="px-6 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {enrollInPlan.isPending ? 'Enrolling...' : 'Confirm Enrollment'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Enrollment Modal */}
+      <EnrollmentModal
+        planId={planId}
+        isOpen={showEnrollModal}
+        onClose={() => setShowEnrollModal(false)}
+        isEnrolled={enrollmentStatus !== 'not_enrolled'}
+      />
     </div>
   )
 }

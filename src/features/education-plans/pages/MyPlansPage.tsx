@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserEnrollments } from '../hooks/usePlanEnrollment'
 import { useSession } from '../../../hooks/useSession'
+import { EnrollmentModal } from '../components/EnrollmentModal'
 import type { UserPlanProgressWithPlan } from '../../../lib/repositories/planEnrollment'
 
 type TabType = 'all' | 'not_started' | 'in_progress' | 'completed'
@@ -14,6 +15,8 @@ export function MyPlansPage() {
   const { session } = useSession()
   const { data: enrollments = [], isLoading } = useUserEnrollments()
   const [activeTab, setActiveTab] = useState<TabType>('all')
+  const [unenrollModalPlanId, setUnenrollModalPlanId] = useState<string | null>(null)
+  const [showDropdownForPlanId, setShowDropdownForPlanId] = useState<string | null>(null)
 
   // Filter enrollments based on active tab
   const filteredEnrollments = useMemo<UserPlanProgressWithPlan[]>(() => {
@@ -175,19 +178,81 @@ export function MyPlansPage() {
             const plan = enrollment.education_plans
             const isInProgress = enrollment.status === 'in_progress'
             const isCompleted = enrollment.status === 'completed'
+            const showDropdown = showDropdownForPlanId === plan.id
 
             return (
               <div
                 key={enrollment.id}
-                className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-lg transition-all group cursor-pointer"
-                onClick={() => navigate(`/education-plans/${plan.id}`)}
+                className="bg-card border border-border rounded-lg overflow-hidden hover:border-primary/50 hover:shadow-lg transition-all group"
               >
                 {/* Card Header */}
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                    <h3
+                      onClick={() => navigate(`/education-plans/${plan.id}`)}
+                      className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1 cursor-pointer"
+                    >
                       {plan.title}
                     </h3>
+
+                    {/* Settings Dropdown */}
+                    <div className="relative ml-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowDropdownForPlanId(showDropdown ? null : plan.id)
+                        }}
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-muted"
+                        aria-label="Plan options"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+
+                      {showDropdown && (
+                        <>
+                          {/* Backdrop */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShowDropdownForPlanId(null)
+                            }}
+                          />
+                          {/* Dropdown Menu */}
+                          <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-20 py-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setShowDropdownForPlanId(null)
+                                navigate(`/education-plans/${plan.id}`)
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Details
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setShowDropdownForPlanId(null)
+                                setUnenrollModalPlanId(plan.id)
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Unenroll
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Tags */}
@@ -288,6 +353,16 @@ export function MyPlansPage() {
             )
           })}
         </div>
+      )}
+
+      {/* Unenroll Modal */}
+      {unenrollModalPlanId && (
+        <EnrollmentModal
+          planId={unenrollModalPlanId}
+          isOpen={true}
+          onClose={() => setUnenrollModalPlanId(null)}
+          isEnrolled={true}
+        />
       )}
     </div>
   )

@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useEducationPlan } from '../hooks/useEducationPlans'
 import { usePlanTopics } from '../hooks/usePlanTopics'
 import { useEnrollInPlan, useUnenrollFromPlan } from '../hooks/usePlanEnrollment'
+import { useToast } from '../../../components/providers/ToastProvider'
 
 interface EnrollmentModalProps {
   planId: string
@@ -15,29 +17,62 @@ interface EnrollmentModalProps {
  * Shows plan overview with topics and commitment details
  */
 export function EnrollmentModal({ planId, isOpen, onClose, isEnrolled = false }: EnrollmentModalProps): JSX.Element | null {
+  const navigate = useNavigate()
+  const { showToast } = useToast()
   const { data: plan, isLoading: planLoading } = useEducationPlan(planId)
   const { data: topics } = usePlanTopics(planId)
   const enrollMutation = useEnrollInPlan()
   const unenrollMutation = useUnenrollFromPlan()
   const [confirmUnenroll, setConfirmUnenroll] = useState(false)
+  const [showSuccessState, setShowSuccessState] = useState(false)
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !enrollMutation.isPending && !unenrollMutation.isPending) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose, enrollMutation.isPending, unenrollMutation.isPending])
 
   const handleEnroll = async () => {
     try {
       await enrollMutation.mutateAsync(planId)
-      onClose()
+      setShowSuccessState(true)
+      showToast(`Successfully enrolled in "${plan?.title}"`, { type: 'success' })
     } catch (error) {
       console.error('Enrollment failed:', error)
+      showToast('Failed to enroll in plan. Please try again.', { type: 'error' })
     }
   }
 
   const handleUnenroll = async () => {
     try {
       await unenrollMutation.mutateAsync(planId)
+      showToast(`Unenrolled from "${plan?.title}"`, { type: 'info' })
       onClose()
       setConfirmUnenroll(false)
     } catch (error) {
       console.error('Unenrollment failed:', error)
+      showToast('Failed to unenroll from plan. Please try again.', { type: 'error' })
     }
+  }
+
+  const handleStartLearning = () => {
+    onClose()
+    setShowSuccessState(false)
+    navigate(`/education-plans/${planId}`)
+  }
+
+  const handleViewMyPlans = () => {
+    onClose()
+    setShowSuccessState(false)
+    navigate('/education-plans/my-plans')
   }
 
   if (!isOpen) return null
@@ -60,12 +95,12 @@ export function EnrollmentModal({ planId, isOpen, onClose, isEnrolled = false }:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">
-            {isEnrolled ? 'Unenroll from Plan' : 'Enroll in Plan'}
+            {showSuccessState ? 'Enrollment Successful' : isEnrolled ? 'Unenroll from Plan' : 'Enroll in Plan'}
           </h2>
           <button
             onClick={onClose}
@@ -181,49 +216,108 @@ export function EnrollmentModal({ planId, isOpen, onClose, isEnrolled = false }:
             </div>
 
             {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex items-center justify-end gap-3">
-              <button
-                onClick={onClose}
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              {isEnrolled ? (
-                confirmUnenroll ? (
+            {showSuccessState ? (
+              /* Success State */
+              <div className="sticky bottom-0 bg-gradient-to-br from-green-50 to-emerald-50 border-t border-green-200 px-6 py-6">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-green-900 mb-2">You&apos;re enrolled!</h3>
+                    <p className="text-sm text-green-800 mb-4">
+                      Great choice! You&apos;re now enrolled in <span className="font-semibold">&ldquo;{plan.title}&rdquo;</span>.
+                      Ready to start your learning journey?
+                    </p>
+                    <div className="bg-white/60 rounded-lg p-4 mb-4 border border-green-200">
+                      <h4 className="text-sm font-semibold text-green-900 mb-2">What&apos;s next?</h4>
+                      <ul className="text-sm text-green-800 space-y-2">
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600 mt-0.5">•</span>
+                          <span>Review the {totalTopics} topic{totalTopics !== 1 ? 's' : ''} in this plan</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600 mt-0.5">•</span>
+                          <span>Start with the first topic and work through the readings</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600 mt-0.5">•</span>
+                          <span>Track your progress as you complete each topic</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-600 mt-0.5">•</span>
+                          <span>Return anytime from your &ldquo;My Plans&rdquo; dashboard</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3">
                   <button
-                    onClick={handleUnenroll}
+                    onClick={handleViewMyPlans}
+                    className="px-4 py-2 text-sm font-medium text-green-700 hover:text-green-800 transition-colors"
+                  >
+                    View My Plans
+                  </button>
+                  <button
+                    onClick={handleStartLearning}
+                    className="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
+                    Start Learning
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Normal Footer */
+              <div className="sticky bottom-0 bg-card border-t border-border px-6 py-4 flex items-center justify-end gap-3">
+                <button
+                  onClick={onClose}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                {isEnrolled ? (
+                  confirmUnenroll ? (
+                    <button
+                      onClick={handleUnenroll}
+                      disabled={isLoading}
+                      className="px-6 py-2 bg-destructive text-destructive-foreground font-semibold rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isLoading && (
+                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                      )}
+                      Confirm Unenroll
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmUnenroll(true)}
+                      disabled={isLoading}
+                      className="px-6 py-2 bg-destructive text-destructive-foreground font-semibold rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                    >
+                      Unenroll
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={handleEnroll}
                     disabled={isLoading}
-                    className="px-6 py-2 bg-destructive text-destructive-foreground font-semibold rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-2 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {isLoading && (
                       <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
                     )}
-                    Confirm Unenroll
+                    Enroll in Plan
                   </button>
-                ) : (
-                  <button
-                    onClick={() => setConfirmUnenroll(true)}
-                    disabled={isLoading}
-                    className="px-6 py-2 bg-destructive text-destructive-foreground font-semibold rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50"
-                  >
-                    Unenroll
-                  </button>
-                )
-              ) : (
-                <button
-                  onClick={handleEnroll}
-                  disabled={isLoading}
-                  className="px-6 py-2 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isLoading && (
-                    <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                  )}
-                  Enroll in Plan
-                </button>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

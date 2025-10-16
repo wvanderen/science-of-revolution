@@ -84,8 +84,10 @@ export class ProgressRepository {
       // Preserve completed status
       status = 'completed'
       completed_at = existingProgress.completed_at ?? new Date().toISOString()
-    } else if (scrollPercent >= 90) {
-      // Mark as completed
+    } else if (scrollPercent >= 85) {
+      // Mark as completed when reaching 85% or higher
+      // This is more forgiving and handles cases where users reach "the bottom"
+      // but might not be at exactly 100% due to rounding or browser differences
       status = 'completed'
       completed_at = new Date().toISOString()
     } else {

@@ -1,6 +1,6 @@
 # Milestone 3 - Progress Update
-**Date**: October 15, 2025
-**Status**: Foundation Complete, Moving to Refinement Phase
+**Date**: October 16, 2025
+**Status**: Foundation Complete, Refinement Phase In Progress
 
 ## Completed Work
 
@@ -77,7 +77,20 @@
 
 ### Bug Fixes & Improvements 🔧
 
-#### Today's Fixes (Oct 15)
+#### Latest Fixes (Oct 16)
+1. **Reading Completion Detection** ✅ - Fixed stuck-at-99% issue
+   - Short content now correctly shows 100% (content that fits on screen)
+   - Added near-bottom detection (within 10px triggers 100%)
+   - Lowered auto-completion threshold from 90% to 85%
+   - Files: `ReaderPage.tsx:358-380`, `progress.ts:87`
+
+2. **Resource-Level Completion Display** ✅ - Fixed library page showing 99% for completed articles
+   - Changed from "furthest progress" to "average progress" calculation
+   - Removed artificial 99% cap on completion percentage
+   - Single-section articles now correctly show 100% when complete
+   - Files: `useResourceProgress.ts:39-77`
+
+#### Previous Fixes (Oct 15)
 1. **RLS Policy Infinite Recursion** - Fixed by simplifying SELECT policy to allow all authenticated users
 2. **Manage Button Visibility** - Corrected logic to properly check creator and facilitator permissions
 3. **Duplicate File Cleanup** - Removed conflicting `.js` files that were shadowing `.tsx` components
@@ -99,6 +112,10 @@
 - 🔄 Topic detail view needs enhancement
 - 🔄 Reading assignment UX could be improved
 - 🔄 Progress updates need reader integration
+
+### Completed Items (Oct 16)
+- ✅ **Reading progress completion tracking** - Resources now complete reliably at 100%
+- ✅ **Library completion display** - Completed articles show 100% instead of stuck at 99%
 
 ## Next Steps (Priority Order)
 
@@ -260,5 +277,32 @@ This puts us approximately 2 weeks behind the original aggressive timeline, but 
 
 ---
 
-**Last Updated**: October 15, 2025
-**Next Review**: October 22, 2025
+## Session Summary (Oct 16, 2025)
+
+### Completed Work
+1. **Reading Completion Tracking Fixes**
+   - Resolved issue where readings got stuck at 99%
+   - Fixed short content detection (single-screen articles)
+   - Improved scroll-to-bottom detection with 10px threshold
+   - Adjusted auto-completion threshold to be more forgiving (90% → 85%)
+
+2. **Library Display Improvements**
+   - Fixed completion percentage calculation in library view
+   - Changed from "furthest progress" to "average progress" across sections
+   - Removed artificial cap that prevented 100% display
+   - Single-section resources now correctly show completion status
+
+### Technical Changes
+- `src/features/reader/pages/ReaderPage.tsx` (lines 358-380)
+- `src/lib/repositories/progress.ts` (line 87)
+- `src/features/progress/hooks/useResourceProgress.ts` (lines 39-77)
+
+### Impact
+- Users can now reliably complete resources, especially short readings
+- Library view accurately reflects completion status
+- Progress tracking more forgiving for natural scrolling behavior
+
+---
+
+**Last Updated**: October 16, 2025
+**Next Review**: October 23, 2025

@@ -361,9 +361,23 @@ export function ReaderPage (): JSX.Element {
     const sessionUser = sessionUserRef.current
 
     const scrollHeight = container.scrollHeight - container.clientHeight
-    const rawRatio = scrollHeight > 0 ? container.scrollTop / scrollHeight : 0
-    const clampedRatio = Math.max(0, Math.min(rawRatio, 1))
-    const percent = Math.round(clampedRatio * 100)
+
+    // Handle short content and near-bottom detection
+    let percent: number
+    if (scrollHeight <= 0) {
+      // Content fits entirely on screen - consider it 100% viewable
+      percent = 100
+    } else {
+      // Check if we're within 10 pixels of the bottom
+      const distanceFromBottom = scrollHeight - container.scrollTop
+      if (distanceFromBottom <= 10) {
+        percent = 100
+      } else {
+        const rawRatio = container.scrollTop / scrollHeight
+        const clampedRatio = Math.max(0, Math.min(rawRatio, 1))
+        percent = Math.round(clampedRatio * 100)
+      }
+    }
 
     localScrollPercentRef.current = percent
 

@@ -492,6 +492,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      plan_reading_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          education_plan_id: string
+          topic_id: string
+          resource_id: string
+          session_start: string
+          session_end: string | null
+          reading_time_seconds: number
+          scroll_progress: number
+          sections_viewed: number
+          completed: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          education_plan_id: string
+          topic_id: string
+          resource_id: string
+          session_start?: string
+          session_end?: string | null
+          reading_time_seconds?: number
+          scroll_progress?: number
+          sections_viewed?: number
+          completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          education_plan_id?: string
+          topic_id?: string
+          resource_id?: string
+          session_start?: string
+          session_end?: string | null
+          reading_time_seconds?: number
+          scroll_progress?: number
+          sections_viewed?: number
+          completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -500,6 +547,12 @@ export interface Database {
           code_to_increment: string
         }
         Returns: void
+      }
+      get_user_reading_streak: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: number
       }
     }
     Enums: Record<string, never>
