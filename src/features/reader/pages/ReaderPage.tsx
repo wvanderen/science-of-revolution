@@ -186,7 +186,9 @@ export function ReaderPage (): JSX.Element {
   const createHighlight = useCreateHighlight()
   const deleteHighlight = useDeleteHighlight()
 
-  const { announcement: paragraphAnnouncement, focusedParagraphElement } = useParagraphNavigation({ contentRef: containerRef })
+  // Create a separate ref for paragraph navigation to avoid conflicts
+  const paragraphNavigationRef = useRef<HTMLDivElement>(null)
+  const { announcement: paragraphAnnouncement, focusedParagraphElement } = useParagraphNavigation({ contentRef: paragraphNavigationRef })
 
   // Plan context tracking - automatically updates reading progress when in plan context
   usePlanContextReader(resourceId, currentSectionId)
@@ -1071,6 +1073,7 @@ export function ReaderPage (): JSX.Element {
           sections={resource.sections}
           sectionHighlights={sectionHighlights}
           contentRef={containerRef}
+          paragraphNavigationRef={paragraphNavigationRef}
           onHighlightClick={handleHighlightClick}
           onSectionRef={registerSectionRef}
         />

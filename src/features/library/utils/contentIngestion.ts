@@ -323,26 +323,72 @@ export function markdownToHtml (markdown: string): string {
     return `<figure class="reader-media"><img src="${escapedSrc}" alt="${escapedAlt}" loading="lazy" decoding="async"${titleAttribute} />${figureCaption}</figure>`
   })
 
-  // Code blocks (```)
-  html = html.replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+  // Code blocks (```) - multi-line support
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const escapedCode = escapeHtml(code.trim())
+    const langClass = lang ? ` class="language-${escapeHtml(lang)}"` : ''
+    return `<pre><code${langClass}>${escapedCode}</code></pre>`
+  })
 
-  // Inline code (`)
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+  // Inline code (`) - avoid processing code blocks again
+  html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>')
 
-  // Bold (**text** or __text__)
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>')
+  // Blockquotes (>) - multi-line support
+  const blockquoteRegex = />\s+(.+)(?=\n(?!>)|\n?$)/g
+  html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
 
-  // Italic (*text* or _text_)
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
-  html = html.replace(/_([^_]+)_/g, '<em>$1</em>')
+  // Process multi-line blockquotes
+  html = html.replace(/(<blockquote>.*<\/blockquote>)(\s*<blockquote>.*<\/blockquote>)+/gs, (match) => {
+    const lines = match.split('</blockquote>').filter(line => line.trim()).map(line => line.replace('<blockquote>', '')).join('\n')
+    return `<blockquote>${lines}</blockquote>`
+  })
 
-  // Blockquotes (>)
-  html = html.replace(/^>\s*(.+)$/gm, '<blockquote>$1</blockquote>')
+  // Bold (**text** or __text__) - improved regex to avoid conflicts
+  // Process bold before italic to avoid conflicts
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/__([^_\n]+)__/g, '<strong>$1</strong>')
 
-  // Unordered lists (- or *)
-  html = html.replace(/^[*-]\s+(.+)$/gm, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+  // Italic (*text* or _text_) - simplified to avoid conflicts
+  // Use a more conservative approach to avoid matching inside bold text
+  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+  html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>')
+
+  // Unordered lists (- or *) - improved processing
+  const lines = html.split('\n')
+  let inList = false
+  let listItems: string[] = []
+  const processedLines: string[] = []
+
+  for (const line of lines) {
+    const trimmedLine = line.trim()
+    const listMatch = trimmedLine.match(/^[*-]\s+(.+)$/)
+
+    if (listMatch) {
+      // This is a list item
+      if (!inList) {
+        // Start a new list
+        inList = true
+        listItems = []
+      }
+      listItems.push(`<li>${listMatch[1].trim()}</li>`)
+    } else {
+      // This is not a list item
+      if (inList) {
+        // Close the current list
+        processedLines.push(`<ul>${listItems.join('')}</ul>`)
+        listItems = []
+        inList = false
+      }
+      processedLines.push(line)
+    }
+  }
+
+  // Close any open list at the end
+  if (inList && listItems.length > 0) {
+    processedLines.push(`<ul>${listItems.join('')}</ul>`)
+  }
+
+  html = processedLines.join('\n')
 
   // Paragraphs (double line breaks)
   const paragraphs = html.split('\n\n').filter(p => p.trim().length > 0)

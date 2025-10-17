@@ -10,6 +10,7 @@ interface ReaderContentProps {
   sections: ResourceSection[]
   sectionHighlights?: Record<string, HighlightWithNote[]>
   contentRef?: RefObject<HTMLDivElement>
+  paragraphNavigationRef?: RefObject<HTMLDivElement>
   onHighlightClick?: (highlightId: string, event: React.MouseEvent) => void
   onSectionRef?: (sectionId: string, element: HTMLElement | null) => void
 }
@@ -21,6 +22,7 @@ export function ReaderContent ({
   sections,
   sectionHighlights = {},
   contentRef,
+  paragraphNavigationRef,
   onHighlightClick,
   onSectionRef
 }: ReaderContentProps): JSX.Element {
@@ -49,6 +51,16 @@ export function ReaderContent ({
     }
   }
 
+  // Callback ref to handle both contentRef and paragraphNavigationRef
+  const setRefs = (element: HTMLDivElement | null) => {
+    if (contentRef != null) {
+      contentRef.current = element
+    }
+    if (paragraphNavigationRef != null) {
+      paragraphNavigationRef.current = element
+    }
+  }
+
   return (
     <article
       className="reader-content max-w-3xl mx-auto px-4 py-8"
@@ -60,7 +72,7 @@ export function ReaderContent ({
       }}
       aria-live="polite"
     >
-      <div ref={contentRef}>
+      <div ref={setRefs}>
         {sections.map((section, index) => {
           const keyboardHelpId = `reader-keyboard-help-${section.id}`
           const highlightedHTML = highlightedContentBySection[section.id] ?? section.content_html

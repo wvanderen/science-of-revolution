@@ -143,6 +143,9 @@ export function useParagraphNavigation ({
       const activeElement = document.activeElement as HTMLElement | null
       const activeWithinReader = activeElement != null && container.contains(activeElement) && activeElement.hasAttribute(PARAGRAPH_ATTR)
 
+      // Allow navigation if either:
+      // 1. Ctrl is pressed (to initiate navigation), OR
+      // 2. Already focused on a paragraph (to continue navigation)
       if (!ctrlKey && !activeWithinReader) return
 
       const direction = key === 'ArrowDown' ? 1 : -1
