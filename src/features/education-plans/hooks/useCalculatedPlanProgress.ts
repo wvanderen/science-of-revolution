@@ -6,7 +6,6 @@ import { ProgressRepository } from '../../../lib/repositories/progress'
 import { PlanTopicRepository } from '../../../lib/repositories/planTopics'
 import type { Database } from '../../../lib/database.types'
 
-type ResourceSection = Database['public']['Tables']['resource_sections']['Row']
 
 /**
  * Hook to calculate plan progress from topic completion data

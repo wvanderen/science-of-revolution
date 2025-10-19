@@ -36,7 +36,7 @@ export function TopicCard({
   showProgress = false,
   onClick
 }: TopicCardProps): JSX.Element {
-  const { session } = useSession()
+  const { session: _session } = useSession()
   const { data: readings } = useTopicReadings(topic.id)
   const { data: progress } = useCalculatedTopicProgress(topic.id)
   const { trackInteraction } = useAnalytics()

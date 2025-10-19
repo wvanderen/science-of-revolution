@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useResource } from '../../library/hooks/useResources'
 import { ReaderLayout } from '../components/ReaderLayout'

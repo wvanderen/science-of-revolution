@@ -73,7 +73,7 @@ function isLikelyHeadingText (text: string): boolean {
   const isAllCaps = trimmed === trimmed.toUpperCase()
   if (isAllCaps) return true
 
-  const cleanedWords = words.map(word => word.replace(/^["'“”‘’()\[]+|["'“”‘’()\]]+$/g, '')).filter(Boolean)
+  const cleanedWords = words.map(word => word.replace(/^["'""''()[[]+|["'""''()[\\]]+$/g, '')).filter(Boolean)
   if (cleanedWords.length === 0) return false
 
   const firstContentWord = cleanedWords.find(word => word.length > 0)
@@ -91,7 +91,7 @@ function isLikelyHeadingText (text: string): boolean {
     const lower = word.toLowerCase()
     const isStopword = LOWERCASE_ARTICLE_WORDS.has(lower)
     const isRomanNumeral = /^[IVXLCDM]+$/.test(word)
-    const startsUppercase = /^[A-Z][A-Za-z0-9'’\-]*$/.test(word)
+    const startsUppercase = /^[A-Z][A-Za-z0-9'’-]*$/.test(word)
 
     if (isRomanNumeral || startsUppercase) {
       uppercaseAnyCount++
@@ -334,7 +334,6 @@ export function markdownToHtml (markdown: string): string {
   html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>')
 
   // Blockquotes (>) - multi-line support
-  const blockquoteRegex = />\s+(.+)(?=\n(?!>)|\n?$)/g
   html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
 
   // Process multi-line blockquotes
