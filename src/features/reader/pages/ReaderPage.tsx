@@ -12,7 +12,6 @@ import { getTextSelection } from '../../highlights/utils/textAnchoring'
 import { useToast } from '../../../components/providers/ToastProvider'
 import { useProgress, useUpdateProgress, useToggleCompleted } from '../../progress/hooks/useProgress'
 import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
-import { useParagraphNavigation } from '../hooks/useParagraphNavigation'
 import { ReaderPreferencesPanel } from '../../preferences/components/ReaderPreferencesPanel'
 import { EditDocumentModal } from '../components/EditDocumentModal'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,6 +21,7 @@ import { useSession } from '../../../hooks/useSession'
 import { useResourceProgress } from '../../progress/hooks/useResourceProgress'
 import { useReader, ReaderProvider } from '../contexts/ReaderContext'
 import { ReaderProgressTracker } from '../components/ReaderProgressTracker'
+import { ReaderSectionNavigator } from '../components/ReaderSectionNavigator'
 
 function areHighlightListsEqual (
   previous: HighlightWithNote[] | undefined,
@@ -100,100 +100,15 @@ function ReaderPageInner (): JSX.Element {
     setLocalScrollPercent,
     setSectionHighlights
   } = actions
-  const registerSectionRef = useCallback((sectionId: string, element: HTMLElement | null) => {
-    const sectionRefs = refs.getSectionRefs()
-    const observerRef = refs.getObserverRef()
-
-    if (element != null) {
-      sectionRefs.set(sectionId, element)
-      if (observerRef != null) {
-        observerRef.observe(element)
-      }
-    } else {
-      const existing = sectionRefs.get(sectionId)
-      if (existing != null && observerRef != null) {
-        observerRef.unobserve(existing)
-      }
-      sectionRefs.delete(sectionId)
-    }
-  }, [refs])
-  useEffect(() => {
-    const container = refs.getScrollContainerRef()
-    if (container == null) return
-
-    const currentObserverRef = refs.getObserverRef()
-    if (currentObserverRef != null) {
-      currentObserverRef.disconnect()
-      refs.setObserverRef(null)
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.length === 0) return
-      if (refs.getIsProgrammaticScrollRef()) return
-
-      const visibleEntries = entries
-        .filter(entry => entry.isIntersecting)
-        .sort((a, b) => a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top)
-
-      if (visibleEntries.length === 0) return
-
-      const nextSectionElement = visibleEntries[0].target as HTMLElement
-      const nextSectionId = nextSectionElement.dataset.sectionId
-      if (nextSectionId == null) return
-      if (refs.getCurrentSectionIdRef() === nextSectionId) return
-
-      setCurrentSectionId(nextSectionId)
-
-      // Update URL without adding history entries during scroll
-      const url = new URL(window.location.href)
-      url.searchParams.set('section', nextSectionId)
-      window.history.replaceState({}, '', url)
-    }, {
-      root: container,
-      threshold: [0.1, 0.25, 0.5],
-      rootMargin: '-30% 0px -50% 0px'
-    })
-
-    refs.setObserverRef(observer)
-
-    refs.getSectionRefs().forEach(element => {
-      observer.observe(element)
-    })
-
-    return () => {
-      observer.disconnect()
-      refs.setObserverRef(null)
-    }
-  }, [refs, setCurrentSectionId, resource?.sections?.length])
-  // Get section ID from URL query params
-  const searchParams = new URLSearchParams(window.location.search)
-  const urlSectionId = searchParams.get('section')
-
+  
   // Text selection for highlighting
   const { selection, clearSelection, containerRef } = useTextSelection()
   const createHighlight = useCreateHighlight()
   const deleteHighlight = useDeleteHighlight()
 
-  // Create a separate ref for paragraph navigation to avoid conflicts
-  const paragraphNavigationRefObject = useMemo(() => ({
-    current: refs.getParagraphNavigationRef()
-  }), [refs])
-
-  const { announcement: paragraphAnnouncement, focusedParagraphElement } = useParagraphNavigation({ contentRef: paragraphNavigationRefObject })
-
   // Callback to set scroll container ref
   const setScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
     refs.setScrollContainerRef(element)
-  }, [refs])
-
-  // Create ref object for paragraph navigation
-  const paragraphNavigationRef = useMemo(() => ({
-    current: refs.getParagraphNavigationRef()
-  }), [refs])
-
-  // Callback to set paragraph navigation ref
-  const setParagraphNavigationRef = useCallback((element: HTMLDivElement | null) => {
-    refs.setParagraphNavigationRef(element)
   }, [refs])
 
   // Plan context tracking - automatically updates reading progress when in plan context
@@ -267,41 +182,7 @@ function ReaderPageInner (): JSX.Element {
   }, [resourceId, refs, setCurrentSectionId])
   
   
-  // Update URL when section changes
-  const handleSectionChange = (sectionId: string): void => {
-    refs.setLatestProgressRef(null)
-    refs.setLocalScrollPercentRef(0)
-    refs.updateLocalScrollPercentState(0)
-    setLocalScrollPercent(0)
-    refs.setRestoreTargetPercentRef(null)
-    refs.setRestoreAttemptsRef(0)
-    setCurrentSectionId(sectionId)
-
-    const sectionElement = refs.getSectionRefs().get(sectionId)
-    const container = refs.getScrollContainerRef()
-
-    if (sectionElement != null && container != null) {
-      refs.setIsProgrammaticScrollRef(true)
-      const offsetTop = sectionElement.offsetTop
-      const headerOffset = 32
-      const targetScrollTop = Math.max(0, offsetTop - headerOffset)
-
-      container.scrollTo({
-        top: targetScrollTop,
-        behavior: 'smooth'
-      })
-
-      window.setTimeout(() => {
-        refs.setIsProgrammaticScrollRef(false)
-      }, 400)
-    }
-
-    // Update URL without page reload
-    const url = new URL(window.location.href)
-    url.searchParams.set('section', sectionId)
-    window.history.pushState({}, '', url)
-  }
-
+  
   const handleClose = (): void => {
     refs.setLatestProgressRef(null)
     refs.setRestoreTargetPercentRef(null)
@@ -493,122 +374,7 @@ function ReaderPageInner (): JSX.Element {
     }
   }, [selectedHighlightId, highlightLookup])
 
-  // Handle 'h' key to highlight focused paragraph
-  useEffect(() => {
-    const handleKeyPress = async (event: KeyboardEvent): Promise<void> => {
-      if (event.key !== 'h' && event.key !== 'H') return
-
-      const target = event.target as HTMLElement
-      if (['INPUT', 'TEXTAREA'].includes(target.tagName)) return
-      if (target.isContentEditable) return
-
-      if (focusedParagraphElement == null) return
-      if (selection != null) return
-
-      const paragraphText = focusedParagraphElement.textContent?.trim()
-      if (paragraphText == null || paragraphText.length === 0) return
-
-      const sectionElement = focusedParagraphElement.closest('[data-section-id]') as HTMLElement | null
-      const sectionId = sectionElement?.dataset.sectionId
-      if (sectionElement == null || sectionId == null) return
-
-      const sectionContentElement = sectionElement.querySelector('[data-section-content="true"]') as HTMLElement | null
-      if (sectionContentElement == null) return
-
-      let startPos = 0
-      let foundStart = false
-      const walker = document.createTreeWalker(sectionContentElement, NodeFilter.SHOW_TEXT, null)
-
-      let node: Node | null
-      while ((node = walker.nextNode()) != null) {
-        if (node.parentElement != null && focusedParagraphElement.contains(node.parentElement)) {
-          foundStart = true
-          break
-        }
-        startPos += node.textContent?.length ?? 0
-      }
-
-      if (!foundStart) return
-
-      const endPos = startPos + paragraphText.length
-      const paragraphIndex = focusedParagraphElement.getAttribute('data-reader-paragraph-index')
-      const sectionHighlightList = sectionHighlights[sectionId] ?? []
-
-      const existingHighlight = sectionHighlightList.find(h =>
-        h.start_pos === startPos &&
-        h.end_pos === endPos &&
-        h.text_content.trim() === paragraphText
-      )
-
-      try {
-        if (existingHighlight != null) {
-          await deleteHighlight.mutateAsync(existingHighlight.id)
-          setSectionHighlights(prev => {
-            const existing = prev[sectionId]
-            if (existing == null) return prev
-            const updated = existing.filter(h => h.id !== existingHighlight.id)
-            if (updated.length === existing.length) return prev
-            return {
-              ...prev,
-              [sectionId]: updated
-            }
-          })
-          showToast('Highlight removed', { type: 'success' })
-        } else {
-          const newHighlight = await createHighlight.mutateAsync({
-            resource_section_id: sectionId,
-            start_pos: startPos,
-            end_pos: endPos,
-            text_content: paragraphText,
-            color: 'yellow',
-            visibility: 'private'
-          })
-
-          const highlightForCache: HighlightWithNote = {
-            ...newHighlight,
-            note: null
-          }
-
-          setSectionHighlights(prev => {
-            const existing = prev[sectionId] ?? []
-            const updated = [...existing, highlightForCache].sort((a, b) => a.start_pos - b.start_pos)
-            return {
-              ...prev,
-              [sectionId]: updated
-            }
-          })
-
-          setCurrentSectionId(sectionId)
-          showToast('Paragraph highlighted', { type: 'success' })
-        }
-
-        if (paragraphIndex != null) {
-          const container = containerRef.current
-          if (container != null) {
-            const refocusParagraph = (): void => {
-              const paragraph = container.querySelector(`[data-reader-paragraph-index="${paragraphIndex}"]`) as HTMLElement
-              if (paragraph != null) {
-                paragraph.focus({ preventScroll: true })
-              }
-            }
-
-            refocusParagraph()
-            setTimeout(refocusParagraph, 50)
-            setTimeout(refocusParagraph, 200)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to toggle highlight:', error)
-        showToast('Failed to toggle highlight', { type: 'error' })
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyPress)
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress)
-    }
-  }, [focusedParagraphElement, selection, containerRef, createHighlight, deleteHighlight, sectionHighlights, showToast])
-
+  
   const noteHighlight = useMemo<HighlightWithNote | null>(() => {
     if (noteHighlightId == null) return null
     return highlightLookup[noteHighlightId] ?? null
@@ -655,37 +421,38 @@ function ReaderPageInner (): JSX.Element {
       {/* Plan context banner - shows when reading from an education plan */}
       <PlanContextBanner />
 
-      {/* Fixed header that stays at top */}
-      <ReaderToolbar
-        sections={resource.sections}
-        currentSectionId={currentSectionId}
-        onSectionSelect={handleSectionChange}
-        onClose={handleClose}
-        progress={displayProgress}
-        scrollPercent={localScrollPercent}
-        onOpenPreferences={handleOpenPreferences}
-        onToggleCompleted={handleToggleCompleted}
-        onEditDocument={handleOpenEditDocument}
-      />
-
       {/* Scrollable content area */}
       <ReaderProgressTracker resourceId={resourceId}>
         <div
           ref={setScrollContainerRef}
           className="flex-1 min-h-0 overflow-y-auto pt-16"
         >
-          <ReaderContent
-            sections={resource.sections}
-            sectionHighlights={sectionHighlights}
-            contentRef={containerRef}
-            paragraphNavigationRef={paragraphNavigationRef}
-            onHighlightClick={handleHighlightClick}
-            onSectionRef={registerSectionRef}
-          />
-
-          <div aria-live="polite" aria-atomic="true" className="sr-only">
-            {paragraphAnnouncement}
-          </div>
+          <ReaderSectionNavigator contentRef={containerRef}>
+            {({ currentSectionId: navSectionId, registerSectionRef, handleSectionChange }) => (
+              <>
+                {/* Fixed header that stays at top */}
+                <ReaderToolbar
+                  sections={resource.sections}
+                  currentSectionId={navSectionId}
+                  onSectionSelect={handleSectionChange}
+                  onClose={handleClose}
+                  progress={displayProgress}
+                  scrollPercent={localScrollPercent}
+                  onOpenPreferences={handleOpenPreferences}
+                  onToggleCompleted={handleToggleCompleted}
+                  onEditDocument={handleOpenEditDocument}
+                />
+                <ReaderContent
+                  sections={resource.sections}
+                  sectionHighlights={sectionHighlights}
+                  contentRef={containerRef}
+                  paragraphNavigationRef={containerRef}
+                  onHighlightClick={handleHighlightClick}
+                  onSectionRef={registerSectionRef}
+                />
+              </>
+            )}
+          </ReaderSectionNavigator>
         </div>
       </ReaderProgressTracker>
 

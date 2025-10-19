@@ -15,7 +15,10 @@
       "Bash(npm run lint:*)",
       "Bash(npm run dev)",
       "Bash(npx playwright test:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test)",
+      "Bash(npm run test:*)"
     ],
     "deny": [],
     "ask": []

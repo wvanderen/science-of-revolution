@@ -1,0 +1,181 @@
+{
+  "main": {
+    "id": "271c6a92dec79a02",
+    "type": "split",
+    "children": [
+      {
+        "id": "7c54cb34f9d8dbef",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8c3c6d652358a3db",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "stories/1.3.reader-navigation-component-decomposition.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "1.3.reader-navigation-component-decomposition"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c5e1336619b182a",
+    "type": "split",
+    "children": [
+      {
+        "id": "470d5af9563a3407",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2c32c6b2e5016480",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "c3e5347cf85671c3",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "a4f409d631837ba1",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d618eadb11ce4754",
+    "type": "split",
+    "children": [
+      {
+        "id": "2129ea32492f4623",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c918f8ec56fea7db",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "stories/1.3.reader-navigation-component-decomposition.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 1.3.reader-navigation-component-decomposition"
+            }
+          },
+          {
+            "id": "321271a4cc5f6154",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "stories/1.3.reader-navigation-component-decomposition.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 1.3.reader-navigation-component-decomposition"
+            }
+          },
+          {
+            "id": "1821d532526803e1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "9a639aea3ea48802",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "stories/1.3.reader-navigation-component-decomposition.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 1.3.reader-navigation-component-decomposition"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "8c3c6d652358a3db",
+  "lastOpenFiles": [
+    "stories/1.3.reader-navigation-component-decomposition.md.tmp.456028.1760907260482",
+    "qa/gates/1.3-reader-navigation-component-decomposition.yml",
+    "qa/gates/1.3-reader-navigation-component-decomposition.yml.tmp.456028.1760907247504",
+    "stories/1.3.reader-navigation-component-decomposition.md.tmp.431382.1760906913129",
+    "stories/1.3.reader-navigation-component-decomposition.md.tmp.431382.1760906909732",
+    "stories/1.3.reader-navigation-component-decomposition.md.tmp.431382.1760906904550"
+  ]
+}
