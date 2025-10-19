@@ -1,17 +1,11 @@
-import { useEffect, useMemo, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useResource } from '../../library/hooks/useResources'
 import { ReaderLayout } from '../components/ReaderLayout'
 import { ReaderToolbar } from '../components/ReaderToolbar'
 import { ReaderContent } from '../components/ReaderContent'
-import { HighlightToolbar } from '../../highlights/components/HighlightToolbar'
-import { HighlightMenu } from '../../highlights/components/HighlightMenu'
-import { useTextSelection } from '../../highlights/hooks/useTextSelection'
-import { useCreateHighlight, useHighlights, useDeleteHighlight, type HighlightWithNote } from '../../highlights/hooks/useHighlights'
-import { getTextSelection } from '../../highlights/utils/textAnchoring'
 import { useToast } from '../../../components/providers/ToastProvider'
 import { useProgress, useUpdateProgress, useToggleCompleted } from '../../progress/hooks/useProgress'
-import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
 import { ReaderPreferencesPanel } from '../../preferences/components/ReaderPreferencesPanel'
 import { EditDocumentModal } from '../components/EditDocumentModal'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,6 +16,11 @@ import { useResourceProgress } from '../../progress/hooks/useResourceProgress'
 import { useReader, ReaderProvider } from '../contexts/ReaderContext'
 import { ReaderProgressTracker } from '../components/ReaderProgressTracker'
 import { ReaderSectionNavigator } from '../components/ReaderSectionNavigator'
+import { useHighlights, type HighlightWithNote } from '../../highlights/hooks/useHighlights'
+import { useReaderHighlighting } from '../hooks/useReaderHighlighting'
+import { HighlightToolbar } from '../../highlights/components/HighlightToolbar'
+import { HighlightMenu } from '../../highlights/components/HighlightMenu'
+import { HighlightNoteModal } from '../../notes/components/HighlightNoteModal'
 
 function areHighlightListsEqual (
   previous: HighlightWithNote[] | undefined,
@@ -82,9 +81,6 @@ function ReaderPageInner (): JSX.Element {
   const { state, actions, refs } = useReader()
   const {
     currentSectionId,
-    selectedHighlightId,
-    menuPosition,
-    noteHighlightId,
     isPreferencesOpen,
     isEditDocumentOpen,
     localScrollPercent,
@@ -92,19 +88,10 @@ function ReaderPageInner (): JSX.Element {
   } = state
   const {
     setCurrentSectionId,
-    setSelectedHighlightId,
-    setMenuPosition,
-    setNoteHighlightId,
     setIsPreferencesOpen,
     setIsEditDocumentOpen,
-    setLocalScrollPercent,
     setSectionHighlights
   } = actions
-  
-  // Text selection for highlighting
-  const { selection, clearSelection, containerRef } = useTextSelection()
-  const createHighlight = useCreateHighlight()
-  const deleteHighlight = useDeleteHighlight()
 
   // Callback to set scroll container ref
   const setScrollContainerRef = useCallback((element: HTMLDivElement | null) => {
@@ -114,7 +101,7 @@ function ReaderPageInner (): JSX.Element {
   // Plan context tracking - automatically updates reading progress when in plan context
   usePlanContextReader(resourceId, currentSectionId)
 
-  // Fetch highlights for current section
+  // Fetch highlights for current section (needed for ReaderContent and highlighting state)
   const { data: highlights = [] } = useHighlights(currentSectionId ?? undefined)
   useEffect(() => {
     if (currentSectionId == null) return
@@ -143,21 +130,19 @@ function ReaderPageInner (): JSX.Element {
       }
     })
   }, [currentSectionId, highlights, refs, setSectionHighlights])
-  const highlightLookup = useMemo(() => {
-    const lookup: Record<string, HighlightWithNote> = {}
-    Object.values(sectionHighlights).forEach(sectionList => {
-      sectionList.forEach(highlight => {
-        lookup[highlight.id] = highlight
-      })
-    })
-    return lookup
-  }, [sectionHighlights])
+
+  // Use reader highlighting hook
+  const highlighting = useReaderHighlighting({
+    currentSectionId,
+    setCurrentSectionId,
+    showToast
+  })
 
   // Progress tracking
   const { data: progress } = useProgress(currentSectionId ?? undefined)
   const updateProgress = useUpdateProgress()
   const toggleCompleted = useToggleCompleted()
-  const { data: resourceProgress, isLoading: isResourceProgressLoading } = useResourceProgress(resourceId)
+  const { data: _resourceProgress, isLoading: _isResourceProgressLoading } = useResourceProgress(resourceId)
 
   // Track the latest progress for save-on-unmount using context refs
   useEffect(() => {
@@ -204,125 +189,7 @@ function ReaderPageInner (): JSX.Element {
     }
   }
 
-  // Handle highlight creation
-  const handleCreateHighlight = async (color: string, visibility: 'private' | 'cohort'): Promise<void> => {
-    if (selection == null) return
-
-    const activeSelection = window.getSelection()
-    if (activeSelection == null || activeSelection.rangeCount === 0) return
-
-    const range = activeSelection.getRangeAt(0)
-    const commonAncestor = range.commonAncestorContainer
-    let sectionContentElement: HTMLElement | null = null
-
-    if (commonAncestor instanceof HTMLElement) {
-      sectionContentElement = commonAncestor.closest('[data-section-content="true"]') as HTMLElement | null
-    } else if (commonAncestor != null) {
-      sectionContentElement = commonAncestor.parentElement?.closest('[data-section-content="true"]') as HTMLElement | null
-    }
-
-    if (sectionContentElement == null) return
-
-    const sectionElement = sectionContentElement.closest('[data-section-id]') as HTMLElement | null
-    const sectionId = sectionElement?.dataset.sectionId
-    if (sectionId == null) return
-
-    const sectionSelection = getTextSelection(sectionContentElement)
-    if (sectionSelection == null) return
-
-    try {
-      const createdHighlight = await createHighlight.mutateAsync({
-        resource_section_id: sectionId,
-        start_pos: sectionSelection.startPos,
-        end_pos: sectionSelection.endPos,
-        text_content: sectionSelection.text,
-        color,
-        visibility
-      })
-
-      const highlightForCache: HighlightWithNote = {
-        ...createdHighlight,
-        note: null
-      }
-
-      setSectionHighlights(prev => {
-        const existing = prev[sectionId] ?? []
-        const updated = [...existing, highlightForCache].sort((a, b) => a.start_pos - b.start_pos)
-        return {
-          ...prev,
-          [sectionId]: updated
-        }
-      })
-
-      setCurrentSectionId(sectionId)
-      showToast('Highlight saved', { type: 'success' })
-      clearSelection()
-    } catch (error) {
-      console.error('Failed to create highlight:', error)
-      showToast('Failed to save highlight', { type: 'error' })
-    }
-  }
-
-  const handleCancelHighlight = (): void => {
-    clearSelection()
-  }
-
-  // Handle clicking on a highlight to show menu
-  const handleHighlightClick = (highlightId: string, event: React.MouseEvent): void => {
-    event.preventDefault()
-
-    const targetHighlight = highlightLookup[highlightId]
-    if (targetHighlight != null && targetHighlight.resource_section_id != null) {
-      setCurrentSectionId(targetHighlight.resource_section_id)
-    }
-
-    setSelectedHighlightId(highlightId)
-    setMenuPosition({ x: event.clientX, y: event.clientY })
-  }
-
-  // Handle deleting a highlight
-  const handleDeleteHighlight = async (highlightId: string): Promise<void> => {
-    const targetHighlight = highlightLookup[highlightId]
-    const sectionId = targetHighlight?.resource_section_id ?? null
-
-    try {
-      await deleteHighlight.mutateAsync(highlightId)
-      if (sectionId != null) {
-        setSectionHighlights(prev => {
-          const existing = prev[sectionId]
-          if (existing == null) return prev
-          const filtered = existing.filter(h => h.id !== highlightId)
-          if (filtered.length === existing.length) return prev
-          return {
-            ...prev,
-            [sectionId]: filtered
-          }
-        })
-      }
-      if (noteHighlightId === highlightId) {
-        setNoteHighlightId(null)
-      }
-    } catch (error) {
-      console.error('Failed to delete highlight:', error)
-    }
-  }
-
-  // Handle adding a note to a highlight
-  const handleAddNote = (highlightId: string): void => {
-    setNoteHighlightId(highlightId)
-    handleCloseMenu()
-  }
-
-  // Close highlight menu
-  const handleCloseMenu = (): void => {
-    setSelectedHighlightId(null)
-    setMenuPosition(null)
-  }
-
-  const handleCloseNoteEditor = (): void => {
-    setNoteHighlightId(null)
-  }
-
+  
   const handleOpenPreferences = (): void => {
     setIsPreferencesOpen(true)
   }
@@ -359,27 +226,7 @@ function ReaderPageInner (): JSX.Element {
     queryClient.invalidateQueries({ queryKey: ['resources'] })
   }
 
-  useEffect(() => {
-    if (noteHighlightId == null) return
-
-    if (highlightLookup[noteHighlightId] == null) {
-      setNoteHighlightId(null)
-    }
-  }, [noteHighlightId, highlightLookup])
-  useEffect(() => {
-    if (selectedHighlightId == null) return
-    if (highlightLookup[selectedHighlightId] == null) {
-      setSelectedHighlightId(null)
-      setMenuPosition(null)
-    }
-  }, [selectedHighlightId, highlightLookup])
-
   
-  const noteHighlight = useMemo<HighlightWithNote | null>(() => {
-    if (noteHighlightId == null) return null
-    return highlightLookup[noteHighlightId] ?? null
-  }, [noteHighlightId, highlightLookup])
-
   if (isLoading) {
     return (
       <ReaderLayout>
@@ -447,7 +294,7 @@ function ReaderPageInner (): JSX.Element {
                   sectionHighlights={sectionHighlights}
                   contentRef={containerRef}
                   paragraphNavigationRef={containerRef}
-                  onHighlightClick={handleHighlightClick}
+                  onHighlightClick={highlighting.handleHighlightClick}
                   onSectionRef={registerSectionRef}
                 />
               </>
@@ -456,31 +303,32 @@ function ReaderPageInner (): JSX.Element {
         </div>
       </ReaderProgressTracker>
 
-      {/* Highlight toolbar - shows when text is selected */}
+      {/* Reader highlighting manager - handles all highlighting functionality */}
       <HighlightToolbar
-        selection={selection}
-        onCreateHighlight={handleCreateHighlight}
-        onCancel={handleCancelHighlight}
+        selection={highlighting.selection}
+        onCreateHighlight={highlighting.handleCreateHighlight}
+        onCancel={highlighting.handleCancelHighlight}
       />
 
       {/* Highlight menu - shows when clicking on a highlight */}
-      {selectedHighlightId != null && menuPosition != null && highlightLookup[selectedHighlightId] != null && (
+      {highlighting.selectedHighlightId != null && highlighting.menuPosition != null && highlighting.highlightLookup[highlighting.selectedHighlightId] != null && (
         <HighlightMenu
-          highlight={highlightLookup[selectedHighlightId]!}
-          position={menuPosition}
-          onAddNote={handleAddNote}
-          onDelete={handleDeleteHighlight}
-          onClose={handleCloseMenu}
+          highlight={highlighting.highlightLookup[highlighting.selectedHighlightId]!}
+          position={highlighting.menuPosition}
+          onAddNote={highlighting.handleAddNote}
+          onDelete={highlighting.handleDeleteHighlight}
+          onClose={highlighting.handleCloseMenu}
         />
       )}
 
-      {noteHighlight != null && (
+      {highlighting.noteHighlight != null && (
         <HighlightNoteModal
-          highlight={noteHighlight}
-          onClose={handleCloseNoteEditor}
+          highlight={highlighting.noteHighlight}
+          onClose={highlighting.handleCloseNoteEditor}
         />
       )}
 
+    
       {/* Reader preferences panel */}
       <ReaderPreferencesPanel
         isOpen={isPreferencesOpen}
