@@ -54,10 +54,10 @@ export function ReaderContent ({
   // Callback ref to handle both contentRef and paragraphNavigationRef
   const setRefs = (element: HTMLDivElement | null) => {
     if (contentRef != null) {
-      contentRef.current = element
+      (contentRef as any).current = element
     }
     if (paragraphNavigationRef != null) {
-      paragraphNavigationRef.current = element
+      (paragraphNavigationRef as any).current = element
     }
   }
 
