@@ -1,0 +1,93 @@
+schema: 1
+story: "{{STORY_NUMBER}}"
+story_title: "{{STORY_TITLE}}"
+gate: "{{GATE_DECISION}}"
+status_reason: "{{STATUS_REASON}}"
+reviewer: "Quinn (Test Architect)"
+updated: "{{TIMESTAMP}}"
+
+waiver: { active: false }
+
+top_issues: []
+
+quality_score: {{QUALITY_SCORE}}
+
+evidence:
+  smoke_tests_run: {{SMOKE_TESTS_COUNT}}
+  smoke_tests_passed: {{SMOKE_TESTS_PASSED}}
+  smoke_tests_failed: {{SMOKE_TESTS_FAILED}}
+  story_validation_tests: {{STORY_VALIDATION_COUNT}}
+  story_validation_passed: {{STORY_VALIDATION_PASSED}}
+  story_validation_failed: {{STORY_VALIDATION_FAILED}}
+  performance_metrics:
+    page_load_time: "{{PAGE_LOAD_TIME}}ms"
+    first_contentful_paint: "{{FCP_TIME}}ms"
+    dom_interactive: "{{DOM_TIME}}ms"
+  browser_coverage:
+    desktop_chrome: "{{DESKTOP_STATUS}}"
+    mobile_chrome: "{{MOBILE_STATUS}}"
+  trace:
+    ac_covered: {{AC_COVERED}}
+    ac_gaps: []
+    story_acs_validated: {{STORY_ACS_VALIDATED}}
+    story_ivs_validated: {{STORY_IVS_VALIDATED}}
+
+nfr_validation:
+  security: { status: "{{SECURITY_STATUS}}", notes: "{{SECURITY_NOTES}}" }
+  performance: { status: "{{PERFORMANCE_STATUS}}", notes: "{{PERFORMANCE_NOTES}}" }
+  reliability: { status: "{{RELIABILITY_STATUS}}", notes: "{{RELIABILITY_NOTES}}" }
+  accessibility: { status: "{{A11Y_STATUS}}", notes: "{{A11Y_NOTES}}" }
+  compatibility: { status: "{{COMPATIBILITY_STATUS}}", notes: "{{COMPATIBILITY_NOTES}}" }
+
+smoke_test_results:
+  core_functionality:
+    status: "{{CORE_FUNCTIONALITY_STATUS}}"
+    issues: []
+    notes: "{{CORE_FUNCTIONALITY_NOTES}}"
+
+  user_interface:
+    status: "{{UI_STATUS}}"
+    issues: []
+    notes: "{{UI_NOTES}}"
+
+  responsive_design:
+    status: "{{RESPONSIVE_STATUS}}"
+    issues: []
+    notes: "{{RESPONSIVE_NOTES}}"
+
+  error_handling:
+    status: "{{ERROR_HANDLING_STATUS}}"
+    issues: []
+    notes: "{{ERROR_HANDLING_NOTES}}"
+
+  network_performance:
+    status: "{{NETWORK_STATUS}}"
+    issues: []
+    notes: "{{NETWORK_NOTES}}"
+
+story_validation_results:
+  acceptance_criteria:
+    status: "{{AC_VALIDATION_STATUS}}"
+    validated_count: {{AC_VALIDATED_COUNT}}
+    failed_count: {{AC_FAILED_COUNT}}
+    issues: []
+    notes: "{{AC_VALIDATION_NOTES}}"
+
+  integration_verification:
+    status: "{{IV_VALIDATION_STATUS}}"
+    validated_count: {{IV_VALIDATED_COUNT}}
+    failed_count: {{IV_FAILED_COUNT}}
+    issues: []
+    notes: "{{IV_VALIDATION_NOTES}}"
+
+  user_journey_validation:
+    status: "{{JOURNEY_VALIDATION_STATUS}}"
+    scenarios_tested: {{JOURNEY_SCENARIOS_COUNT}}
+    issues: []
+    notes: "{{JOURNEY_VALIDATION_NOTES}}"
+
+recommendations:
+  immediate: {{IMMEDIATE_RECOMMENDATIONS}}
+  future: {{FUTURE_RECOMMENDATIONS}}
+
+blocking_issues: []

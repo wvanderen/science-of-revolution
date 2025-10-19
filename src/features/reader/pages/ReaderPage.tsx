@@ -21,6 +21,7 @@ import { usePlanContextReader } from '../hooks/usePlanContextReader'
 import { useSession } from '../../../hooks/useSession'
 import { useResourceProgress } from '../../progress/hooks/useResourceProgress'
 import { useReader, ReaderProvider } from '../contexts/ReaderContext'
+import { ReaderProgressTracker } from '../components/ReaderProgressTracker'
 
 function areHighlightListsEqual (
   previous: HighlightWithNote[] | undefined,
@@ -64,14 +65,6 @@ function getHighlightsSignature (highlights: HighlightWithNote[]): string {
     .join('|')
 }
 
-function getProgressSignature (progressEntries: Array<{ resource_section_id: string, scroll_percent: number | null, status: string | null, updated_at: string | null }>): string {
-  if (progressEntries.length === 0) return 'empty'
-
-  return [...progressEntries]
-    .sort((a, b) => a.resource_section_id.localeCompare(b.resource_section_id))
-    .map(entry => `${entry.resource_section_id}:${entry.scroll_percent ?? 0}:${entry.status ?? 'unknown'}:${entry.updated_at ?? ''}`)
-    .join('|')
-}
 
 /**
  * Main reader page for viewing resource sections
@@ -260,429 +253,28 @@ function ReaderPageInner (): JSX.Element {
     refs.setSessionUserRef(session?.user ?? null)
   }, [refs, session?.user])
 
-  // Save progress before unmounting to prevent data loss
-  const flushLatestProgress = useCallback(() => {
-    const latest = refs.getLatestProgressRef()
-    const sessionUser = refs.getSessionUserRef()
-    if (latest == null || sessionUser == null) return
-
-    refs.setLastReportedProgressRef(latest.percent)
-    refs.getUpdateProgressRef().mutate({
-      sectionId: latest.sectionId,
-      scrollPercent: latest.percent,
-      resourceId: latest.resourceId ?? resourceId ?? undefined
-    })
-  }, [refs, resourceId])
-
-  const cancelScheduledRestore = useCallback(() => {
-    const frameRef = refs.getRestoreFrameRef()
-    if (frameRef != null) {
-      cancelAnimationFrame(frameRef)
-      refs.setRestoreFrameRef(null)
-    }
-  }, [refs])
-
-  const scheduleRestoreAttempt = useCallback(() => {
-    if (refs.getRestoreTargetPercentRef() == null) {
-      cancelScheduledRestore()
-      return
-    }
-
-    refs.setRestoreAttemptsRef(0)
-
-    const attemptRestore = () => {
-      const target = refs.getRestoreTargetPercentRef()
-      if (target == null) {
-        cancelScheduledRestore()
-        refs.setIsRestoringProgressRef(false)
-        refs.setIsProgrammaticScrollRef(false)
-        return
-      }
-
-      const container = refs.getScrollContainerRef()
-      if (container == null) {
-        refs.setRestoreFrameRef(requestAnimationFrame(attemptRestore))
-        return
-      }
-
-      const scrollRange = container.scrollHeight - container.clientHeight
-      if (scrollRange <= 0) {
-        refs.setRestoreFrameRef(requestAnimationFrame(attemptRestore))
-        return
-      }
-
-      const desiredTop = Math.max(0, (target / 100) * scrollRange)
-      const diffPx = Math.abs(container.scrollTop - desiredTop)
-
-      if (diffPx <= 1) {
-        refs.setRestoreTargetPercentRef(null)
-        refs.setRestoreAttemptsRef(0)
-        refs.setIsRestoringProgressRef(false)
-        refs.setIsProgrammaticScrollRef(false)
-        cancelScheduledRestore()
-        return
-      }
-
-      refs.setIsRestoringProgressRef(true)
-      refs.setIsProgrammaticScrollRef(true)
-      container.scrollTo({ top: desiredTop, behavior: 'auto' })
-      refs.setRestoreAttemptsRef(refs.getRestoreAttemptsRef() + 1)
-
-      if (refs.getRestoreAttemptsRef() >= 60) {
-        refs.setRestoreTargetPercentRef(null)
-        refs.setIsRestoringProgressRef(false)
-        cancelScheduledRestore()
-        window.setTimeout(() => {
-          refs.setIsProgrammaticScrollRef(false)
-        }, 80)
-        return
-      }
-
-      refs.setRestoreFrameRef(requestAnimationFrame(attemptRestore))
-      window.setTimeout(() => {
-        refs.setIsProgrammaticScrollRef(false)
-      }, 80)
-    }
-
-    cancelScheduledRestore()
-    refs.setRestoreFrameRef(requestAnimationFrame(attemptRestore))
-  }, [refs, cancelScheduledRestore])
-
   useEffect(() => {
     refs.setHasInitializedSectionRef(false)
     refs.setResumeScrollPercentRef(null)
     refs.setIsRestoringProgressRef(false)
     refs.setProgressSignatureRef(null)
     refs.setLocalScrollPercentRef(0)
+    refs.updateLocalScrollPercentState(0)
     refs.setRestoreTargetPercentRef(null)
     refs.setRestoreAttemptsRef(0)
     refs.setLatestProgressRef(null)
-    cancelScheduledRestore()
     setCurrentSectionId(null)
-  }, [resourceId, refs, cancelScheduledRestore, setCurrentSectionId])
-
-  useEffect(() => {
-    return () => {
-      flushLatestProgress()
-    }
-  }, [flushLatestProgress])
-
-  useEffect(() => {
-    return () => {
-      cancelScheduledRestore()
-    }
-  }, [cancelScheduledRestore])
-  const updateGlobalProgress = useCallback(() => {
-    const container = refs.getScrollContainerRef()
-    if (container == null) return
-    const sessionUser = refs.getSessionUserRef()
-
-    const scrollHeight = container.scrollHeight - container.clientHeight
-
-    // Handle short content and near-bottom detection
-    let percent: number
-    if (scrollHeight <= 0) {
-      // Content fits entirely on screen - consider it 100% viewable
-      percent = 100
-    } else {
-      // Check if we're within 10 pixels of the bottom
-      const distanceFromBottom = scrollHeight - container.scrollTop
-      if (distanceFromBottom <= 10) {
-        percent = 100
-      } else {
-        const rawRatio = container.scrollTop / scrollHeight
-        const clampedRatio = Math.max(0, Math.min(rawRatio, 1))
-        percent = Math.round(clampedRatio * 100)
-      }
-    }
-
-    refs.setLocalScrollPercentRef(percent)
-
-    const activeSectionId = refs.getCurrentSectionIdRef()
-    if (activeSectionId != null) {
-      refs.setLatestProgressRef({
-        sectionId: activeSectionId,
-        percent,
-        resourceId: resourceId ?? null
-      })
-    }
-
-    const restoreTarget = refs.getRestoreTargetPercentRef()
-    if (restoreTarget != null) {
-      const diff = Math.abs(percent - restoreTarget)
-      if (diff <= 2) {
-        refs.setRestoreTargetPercentRef(null)
-        refs.setRestoreAttemptsRef(0)
-        refs.setIsRestoringProgressRef(false)
-        cancelScheduledRestore()
-      }
-    }
-
-    setLocalScrollPercent(percent)
-
-    if (refs.getIsRestoringProgressRef()) {
-      return
-    }
-
-    const lastReported = refs.getLastReportedProgressRef()
-
-    // Update progress if: never reported before, changed by 5%, or reached 100%
-    const shouldUpdate = activeSectionId != null && (
-      lastReported == null ||
-      Math.abs(percent - lastReported) >= 5 ||
-      percent === 100
-    )
-
-    if (shouldUpdate) {
-      if (sessionUser == null) return
-      refs.setLastReportedProgressRef(percent)
-      refs.setLatestProgressRef({
-        sectionId: activeSectionId,
-        percent,
-        resourceId: resourceId ?? null
-      })
-      refs.getUpdateProgressRef().mutate({
-        sectionId: activeSectionId,
-        scrollPercent: percent,
-        resourceId: resourceId ?? undefined
-      })
-    }
-  }, [refs, resourceId, cancelScheduledRestore, setLocalScrollPercent])
-
-  useEffect(() => {
-    const container = refs.getScrollContainerRef()
-    if (container == null) return
-
-    const handleScroll = () => {
-      updateGlobalProgress()
-    }
-
-    container.addEventListener('scroll', handleScroll, { passive: true })
-
-    // Calculate initial progress after layout stabilizes
-    requestAnimationFrame(() => {
-      updateGlobalProgress()
-    })
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-    }
-  }, [refs, updateGlobalProgress])
-  useEffect(() => {
-    if (currentSectionId == null) return
-    requestAnimationFrame(() => {
-      updateGlobalProgress()
-    })
-  }, [currentSectionId, updateGlobalProgress])
-
-  // Initialize current section when resource and progress data are ready
-  useEffect(() => {
-    if (resource?.sections == null || resource.sections.length === 0) return
-    if (isResourceProgressLoading) return
-
-    const sections = resource.sections
-    const sectionById = new Map(sections.map(section => [section.id, section]))
-    const progressList = (resourceProgress ?? []).filter(entry => sectionById.has(entry.resource_section_id))
-    const progressSignature = getProgressSignature(progressList)
-    const canReinitialize = !refs.getHasInitializedSectionRef() || refs.getLocalScrollPercentRef() <= 5
-
-    if (!canReinitialize) {
-      refs.setProgressSignatureRef(progressSignature)
-      return
-    }
-
-    if (refs.getHasInitializedSectionRef() && refs.getProgressSignatureRef() === progressSignature) {
-      return
-    }
-
-    refs.setProgressSignatureRef(progressSignature)
-
-    const resolveFromUrl = (): { sectionId: string | null, percent: number | null } => {
-      if (urlSectionId == null) return { sectionId: null, percent: null }
-      if (!sectionById.has(urlSectionId)) return { sectionId: null, percent: null }
-
-      const matching = progressList.find(entry => entry.resource_section_id === urlSectionId)
-      return {
-        sectionId: urlSectionId,
-        percent: matching?.scroll_percent ?? null
-      }
-    }
-
-    const resolveFromProgress = (): { sectionId: string | null, percent: number | null } => {
-      if (progressList.length === 0) {
-        return { sectionId: sections[0]?.id ?? null, percent: 0 }
-      }
-
-      const inProgressEntries = progressList
-        .filter(entry => entry.status === 'in_progress')
-        .map(entry => ({
-          entry,
-          scrollPercent: entry.scroll_percent ?? 0,
-          updatedAt: entry.updated_at != null ? new Date(entry.updated_at).getTime() : 0
-        }))
-        .sort((a, b) => {
-          if (a.scrollPercent !== b.scrollPercent) {
-            return b.scrollPercent - a.scrollPercent
-          }
-          return b.updatedAt - a.updatedAt
-        })
-
-      if (inProgressEntries.length > 0) {
-        const target = inProgressEntries[0]
-        return {
-          sectionId: target.entry.resource_section_id,
-          percent: target.scrollPercent
-        }
-      }
-
-      const completedEntries = progressList
-        .filter(entry => entry.status === 'completed')
-        .map(entry => {
-          const section = sectionById.get(entry.resource_section_id)
-          return {
-            entry,
-            order: section?.order ?? -1,
-            updatedAt: entry.updated_at != null ? new Date(entry.updated_at).getTime() : 0
-          }
-        })
-        .sort((a, b) => {
-          if (a.order !== b.order) {
-            return b.order - a.order
-          }
-          return b.updatedAt - a.updatedAt
-        })
-
-      if (completedEntries.length > 0) {
-        const latestCompleted = completedEntries[0]
-        const currentSection = sectionById.get(latestCompleted.entry.resource_section_id)
-        if (currentSection != null) {
-          const nextSection = sections.find(section => section.order > currentSection.order)
-          if (nextSection != null) {
-            return { sectionId: nextSection.id, percent: 0 }
-          }
-          return {
-            sectionId: currentSection.id,
-            percent: latestCompleted.entry.scroll_percent ?? 100
-          }
-        }
-      }
-
-      return { sectionId: sections[0]?.id ?? null, percent: 0 }
-    }
-
-    const fromUrl = resolveFromUrl()
-    const chosen = fromUrl.sectionId != null ? fromUrl : resolveFromProgress()
-
-    if (chosen.sectionId != null) {
-      refs.setHasInitializedSectionRef(true)
-      refs.setResumeScrollPercentRef(chosen.percent ?? null)
-      refs.setIsRestoringProgressRef((chosen.percent ?? 0) > 0)
-      setCurrentSectionId(chosen.sectionId)
-      const normalizedPercent = chosen.percent != null
-        ? Math.max(0, Math.min(100, Math.round(chosen.percent)))
-        : null
-
-      if (normalizedPercent != null) {
-        setLocalScrollPercent(normalizedPercent)
-        refs.setLocalScrollPercentRef(normalizedPercent)
-        refs.setRestoreTargetPercentRef(normalizedPercent)
-        refs.setRestoreAttemptsRef(0)
-        scheduleRestoreAttempt()
-      } else {
-        setLocalScrollPercent(0)
-        refs.setLocalScrollPercentRef(0)
-        refs.setRestoreTargetPercentRef(0)
-        refs.setRestoreAttemptsRef(0)
-        scheduleRestoreAttempt()
-      }
-    }
-  }, [resource, resourceProgress, isResourceProgressLoading, urlSectionId, scheduleRestoreAttempt])
-
-  useEffect(() => {
-    if (currentSectionId == null) return
-
-    const pendingPercent = refs.getResumeScrollPercentRef()
-    if (pendingPercent != null && pendingPercent > 0) {
-      const container = refs.getScrollContainerRef()
-      if (container != null) {
-        refs.setIsRestoringProgressRef(true)
-        refs.setIsProgrammaticScrollRef(true)
-        requestAnimationFrame(() => {
-          const scrollHeight = container.scrollHeight - container.clientHeight
-          const targetScrollTop = scrollHeight > 0 ? (pendingPercent / 100) * scrollHeight : 0
-          container.scrollTo({
-            top: targetScrollTop,
-            behavior: 'auto'
-          })
-
-          const normalized = Math.max(0, Math.min(100, Math.round(pendingPercent)))
-          refs.setLocalScrollPercentRef(normalized)
-          setLocalScrollPercent(normalized)
-          refs.setLatestProgressRef({
-            sectionId: currentSectionId,
-            percent: pendingPercent,
-            resourceId: resourceId ?? null
-          })
-          refs.setLastReportedProgressRef(pendingPercent)
-          refs.setRestoreTargetPercentRef(normalized)
-          refs.setRestoreAttemptsRef(0)
-          scheduleRestoreAttempt()
-
-          window.setTimeout(() => {
-            refs.setIsProgrammaticScrollRef(false)
-            refs.setIsRestoringProgressRef(false)
-            updateGlobalProgress()
-          }, 300)
-        })
-      } else {
-        refs.setIsRestoringProgressRef(false)
-      }
-    } else if (pendingPercent === 0) {
-      refs.setLatestProgressRef({
-        sectionId: currentSectionId,
-        percent: 0,
-        resourceId: resourceId ?? null
-      })
-      refs.setLocalScrollPercentRef(0)
-      setLocalScrollPercent(0)
-      refs.setLastReportedProgressRef(0)
-      refs.setRestoreTargetPercentRef(0)
-      refs.setRestoreAttemptsRef(0)
-      scheduleRestoreAttempt()
-      refs.setIsRestoringProgressRef(false)
-    }
-
-    refs.setResumeScrollPercentRef(null)
-  }, [currentSectionId, resourceId, updateGlobalProgress, scheduleRestoreAttempt])
-
-  useEffect(() => {
-    if (currentSectionId == null) return
-
-    if (resourceProgress != null) {
-      const existing = resourceProgress.find(entry => entry.resource_section_id === currentSectionId)
-      if (existing?.scroll_percent != null) {
-        refs.setLastReportedProgressRef(existing.scroll_percent)
-        refs.setLatestProgressRef({
-          sectionId: currentSectionId,
-          percent: existing.scroll_percent,
-          resourceId: resourceId ?? null
-        })
-        return
-      }
-    }
-
-    refs.setLastReportedProgressRef(null)
-  }, [currentSectionId, resourceProgress, resourceId])
-
+  }, [resourceId, refs, setCurrentSectionId])
+  
+  
   // Update URL when section changes
   const handleSectionChange = (sectionId: string): void => {
-    flushLatestProgress()
     refs.setLatestProgressRef(null)
     refs.setLocalScrollPercentRef(0)
+    refs.updateLocalScrollPercentState(0)
     setLocalScrollPercent(0)
     refs.setRestoreTargetPercentRef(null)
     refs.setRestoreAttemptsRef(0)
-    cancelScheduledRestore()
     setCurrentSectionId(sectionId)
 
     const sectionElement = refs.getSectionRefs().get(sectionId)
@@ -701,7 +293,6 @@ function ReaderPageInner (): JSX.Element {
 
       window.setTimeout(() => {
         refs.setIsProgrammaticScrollRef(false)
-        updateGlobalProgress()
       }, 400)
     }
 
@@ -712,11 +303,9 @@ function ReaderPageInner (): JSX.Element {
   }
 
   const handleClose = (): void => {
-    flushLatestProgress()
     refs.setLatestProgressRef(null)
     refs.setRestoreTargetPercentRef(null)
     refs.setRestoreAttemptsRef(0)
-    cancelScheduledRestore()
     // Check if we came from an education plan context
     const searchParams = new URLSearchParams(window.location.search)
     const planId = searchParams.get('planId')
@@ -1080,23 +669,25 @@ function ReaderPageInner (): JSX.Element {
       />
 
       {/* Scrollable content area */}
-      <div
-        ref={setScrollContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto pt-16"
-      >
-        <ReaderContent
-          sections={resource.sections}
-          sectionHighlights={sectionHighlights}
-          contentRef={containerRef}
-          paragraphNavigationRef={paragraphNavigationRef}
-          onHighlightClick={handleHighlightClick}
-          onSectionRef={registerSectionRef}
-        />
+      <ReaderProgressTracker resourceId={resourceId}>
+        <div
+          ref={setScrollContainerRef}
+          className="flex-1 min-h-0 overflow-y-auto pt-16"
+        >
+          <ReaderContent
+            sections={resource.sections}
+            sectionHighlights={sectionHighlights}
+            contentRef={containerRef}
+            paragraphNavigationRef={paragraphNavigationRef}
+            onHighlightClick={handleHighlightClick}
+            onSectionRef={registerSectionRef}
+          />
 
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {paragraphAnnouncement}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {paragraphAnnouncement}
+          </div>
         </div>
-      </div>
+      </ReaderProgressTracker>
 
       {/* Highlight toolbar - shows when text is selected */}
       <HighlightToolbar

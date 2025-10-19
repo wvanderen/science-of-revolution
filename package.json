@@ -11,10 +11,15 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
+    "test:smoke:ci": "playwright test --config=playwright.smoke.config.ts --reporter=json",
+    "test:smoke:mobile": "playwright test --config=playwright.smoke.config.ts --project=mobile-chrome-smoke",
+    "test:story": "playwright test tests/e2e/story-validation",
+    "test:story:ci": "playwright test tests/e2e/story-validation --reporter=json",
     "migration:create": "bash scripts/create-migration.sh",
     "migration:check": "bash scripts/check-migrations.sh",
     "typecheck": "tsc --noEmit",
-    "ci": "npm run typecheck && npm run lint && npm run migration:check && npm test -- --run"
+    "ci": "npm run typecheck && npm run lint && npm run migration:check && npm test -- --run && npm run test:smoke:ci"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.45.1",

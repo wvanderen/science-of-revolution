@@ -72,6 +72,7 @@ export interface ReaderContextType {
     setProgressSignatureRef: (signature: string | null) => void
     getLocalScrollPercentRef: () => number
     setLocalScrollPercentRef: (percent: number) => void
+    updateLocalScrollPercentState: (percent: number) => void
     getRestoreTargetPercentRef: () => number | null
     setRestoreTargetPercentRef: (percent: number | null) => void
     getRestoreAttemptsRef: () => number
@@ -144,6 +145,17 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     currentSectionIdRef.current = currentSectionId
   }, [currentSectionId])
 
+  // Keep localScrollPercentRef in sync with state for progress tracking
+  useEffect(() => {
+    localScrollPercentRef.current = localScrollPercent
+  }, [localScrollPercent])
+
+  // Keep localScrollPercent state in sync with ref updates from progress tracking
+  const updateLocalScrollPercent = useCallback((percent: number) => {
+    localScrollPercentRef.current = percent
+    setLocalScrollPercent(percent)
+  }, [])
+
   // Memoize state to prevent unnecessary re-renders
   const state = useMemo<ReaderState>(() => ({
     currentSectionId,
@@ -211,6 +223,7 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     setProgressSignatureRef: (signature: string | null) => { progressSignatureRef.current = signature },
     getLocalScrollPercentRef: () => localScrollPercentRef.current,
     setLocalScrollPercentRef: (percent: number) => { localScrollPercentRef.current = percent },
+    updateLocalScrollPercentState: (percent: number) => { updateLocalScrollPercent(percent) },
     getRestoreTargetPercentRef: () => restoreTargetPercentRef.current,
     setRestoreTargetPercentRef: (percent: number | null) => { restoreTargetPercentRef.current = percent },
     getRestoreAttemptsRef: () => restoreAttemptsRef.current,
@@ -225,7 +238,7 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     setUpdateProgressRef: (ref: any) => { updateProgressRef.current = ref },
     getSessionUserRef: () => sessionUserRef.current,
     setSessionUserRef: (user: any) => { sessionUserRef.current = user }
-  }), [])
+  }), [updateLocalScrollPercent])
 
   const contextValue = useMemo<ReaderContextType>(() => ({
     state,
