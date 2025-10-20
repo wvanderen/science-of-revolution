@@ -9,6 +9,7 @@ import { ResourceUploadPage } from '../features/library/pages/ResourceUploadPage
 import { EducationPlansPage } from '../features/education-plans/pages/EducationPlansPage'
 import { MyPlansPage } from '../features/education-plans/pages/MyPlansPage'
 import { TopicDetailPage } from '../features/education-plans/pages/TopicDetailPage'
+import { ProfilePage } from '../features/profiles/pages/ProfilePage'
 
 const AppRoutes = (): JSX.Element => (
   <Routes>
@@ -23,6 +24,7 @@ const AppRoutes = (): JSX.Element => (
       <Route path="education-plans/topics/:topicId" element={<TopicDetailPage />} />
       <Route path="education-plans/:planId" element={<EducationPlansPage />} />
       <Route path="education-plans" element={<EducationPlansPage />} />
+      <Route path="profile" element={<ProfilePage />} />
     </Route>
   </Routes>
 )

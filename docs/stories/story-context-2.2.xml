@@ -1,0 +1,295 @@
+<story-context id="story-2.2" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2</storyId>
+    <title>Profile Configuration Interface</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-19T20:30:00-05:00</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2.2.profile-configuration-interface.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>configure my profile information and reading preferences</iWant>
+    <soThat>my reading experience is personalized to my needs</soThat>
+    <tasks><![CDATA[
+- Task 1: Create Profile Route and Basic Structure (AC: 1)
+  - Add `/profile` route to AppRoutes.tsx
+  - Create ProfilePage component in appropriate location
+  - Set up basic page layout and navigation structure
+  - Ensure proper integration with existing AppLayout
+
+- Task 2: Implement ProfileConfiguration Component (AC: 1, 2)
+  - Create ProfileConfiguration component following existing patterns
+  - Implement profile form with display name, bio fields
+  - Add form validation using appropriate validation library
+  - Set up React Query integration for profile operations
+  - Add loading states and error handling
+
+- Task 3: Create Reading Preferences Panel (AC: 3)
+  - Design reading preferences form component
+  - Implement font size control (slider/input)
+  - Add theme selection (light/dark/high-contrast options)
+  - Include reading speed selection (slow/normal/fast)
+  - Connect preferences to existing reader preference system
+
+- Task 4: Implement Privacy Settings Controls (AC: 4)
+  - Create privacy settings form component
+  - Add profile visibility selector (public/cohorts/private)
+  - Implement reading progress sharing toggle
+  - Add shared notes permission control
+  - Ensure privacy settings integrate with RLS policies from Story 2.1
+
+- Task 5: Add Form Validation and Error Handling (AC: 5)
+  - Implement comprehensive form validation rules
+  - Add field-level error display
+  - Create optimistic updates with React Query
+  - Handle network errors gracefully
+  - Add success feedback for profile updates
+
+- Task 6: Create Supporting Components (AC: 2)
+  - Create avatar upload component (placeholder for Story 2.3)
+  - Add profile preview component
+  - Implement form submission buttons with proper states
+  - Add form reset and cancel functionality
+
+- Task 7: Integration Testing and Polish (AC: 1, 2, 3, 4, 5)
+  - Test profile updates persist correctly across sessions
+  - Verify form validation catches all edge cases
+  - Confirm privacy settings work with backend RLS policies
+  - Test reading preferences integration with reader components
+  - Add proper accessibility labels and ARIA support
+    ]]></tasks>
+  </story>
+
+  <technical-implementation>
+    <component-architecture>
+      <feature-structure path="src/features/profiles/">
+        <components>
+          <component name="ProfileConfiguration.tsx" main="true"/>
+          <component name="ProfileForm.tsx"/>
+          <component name="ReadingPreferencesPanel.tsx"/>
+          <component name="PrivacySettingsPanel.tsx"/>
+          <component name="ProfilePreview.tsx"/>
+        </components>
+        <hooks>
+          <hook name="useProfile.ts"/>
+          <hook name="useProfileUpdate.ts"/>
+        </hooks>
+        <pages>
+          <page name="ProfilePage.tsx"/>
+        </pages>
+        <types>
+          <type name="profile.types.ts"/>
+        </types>
+      </feature-structure>
+    </component-architecture>
+
+    <data-models>
+      <interface name="UserProfile">
+        <field name="id" type="string"/>
+        <field name="display_name" type="string"/>
+        <field name="avatar_url" type="string" optional="true"/>
+        <field name="bio" type="string" optional="true"/>
+        <field name="reading_preferences" type="ReadingPreferences"/>
+        <field name="privacy_settings" type="PrivacySettings"/>
+        <field name="created_at" type="string"/>
+        <field name="updated_at" type="string"/>
+      </interface>
+
+      <interface name="ReadingPreferences">
+        <field name="font_size" type="number" default="16"/>
+        <field name="theme" type="'light' | 'dark'" default="'light'"/>
+        <field name="reading_speed" type="'slow' | 'normal' | 'fast'" default="'normal'"/>
+      </interface>
+
+      <interface name="PrivacySettings">
+        <field name="profile_visibility" type="'public' | 'cohorts' | 'private'" default="'private'"/>
+        <field name="share_reading_progress" type="boolean" default="false"/>
+        <field name="allow_shared_notes" type="boolean" default="false"/>
+      </interface>
+    </data-models>
+
+    <react-query-integration>
+      <mutation name="useProfileUpdate">
+        <mutationFn>profilesRepository.updateProfile</mutationFn>
+        <onSuccess>queryClient.invalidateQueries(['profile'])</onSuccess>
+        <optimisticUpdates>true</optimisticUpdates>
+      </mutation>
+
+      <query name="useProfile">
+        <queryKey>['profile', userId]</queryKey>
+        <queryFn>profilesRepository.getProfile</queryFn>
+        <staleTime>5 * 60 * 1000</staleTime>
+      </query>
+    </react-query-integration>
+
+    <form-validation>
+      <validation-rules>
+        <field name="display_name">
+          <rule type="required" message="Display name is required"/>
+          <rule type="minLength" value="2" message="Must be at least 2 characters"/>
+          <rule type="maxLength" value="50" message="Must be 50 characters or less"/>
+        </field>
+        <field name="bio">
+          <rule type="maxLength" value="500" message="Bio must be 500 characters or less"/>
+        </field>
+        <field name="font_size">
+          <rule type="min" value="8" message="Font size must be at least 8"/>
+          <rule type="max" value="32" message="Font size must be 32 or less"/>
+        </field>
+      </validation-rules>
+      <library>React Hook Form with Zod</library>
+    </form-validation>
+
+    <routing-integration>
+      <route path="/profile" element="ProfilePage"/>
+      <navigation-integration>Add profile link to existing navigation</navigation-integration>
+    </routing-integration>
+
+    <accessibility-requirements>
+      <form-accessibility>
+        <requirement>Proper labeling and ARIA attributes for all form controls</requirement>
+        <requirement>Keyboard navigation support for all interactive elements</requirement>
+        <requirement>Screen reader announcements for validation errors and success states</requirement>
+        <requirement>High contrast support and proper focus management</requirement>
+        <requirement>Error messages programmatically associated with form fields</requirement>
+      </form-accessibility>
+      <component-accessibility>
+        <requirement>Semantic HTML structure for forms and sections</requirement>
+        <requirement>Proper heading hierarchy and landmark regions</requirement>
+        <requirement>Focus management during form submission and validation</requirement>
+        <requirement>Support for reduced motion preferences</requirement>
+      </component-accessibility>
+    </accessibility-requirements>
+  </technical-implementation>
+
+  <file-locations>
+    <new-files>
+      <file path="src/features/profiles/pages/ProfilePage.tsx" description="Main profile page component"/>
+      <file path="src/features/profiles/components/ProfileConfiguration.tsx" description="Main profile configuration component"/>
+      <file path="src/features/profiles/components/ProfileForm.tsx" description="Profile form component"/>
+      <file path="src/features/profiles/components/ReadingPreferencesPanel.tsx" description="Reading preferences form"/>
+      <file path="src/features/profiles/components/PrivacySettingsPanel.tsx" description="Privacy settings form"/>
+      <file path="src/features/profiles/components/ProfilePreview.tsx" description="Profile preview component"/>
+      <file path="src/features/profiles/hooks/useProfile.ts" description="Profile data hook"/>
+      <file path="src/features/profiles/hooks/useProfileUpdate.ts" description="Profile update hook"/>
+      <file path="src/features/profiles/types/profile.types.ts" description="Type definitions"/>
+    </new-files>
+
+    <modified-files>
+      <file path="src/routes/AppRoutes.tsx" description="Add profile route"/>
+      <file path="src/components/Navigation.tsx or equivalent" description="May need profile link addition"/>
+    </modified-files>
+
+    <test-files>
+      <file path="src/features/profiles/components/__tests__/ProfileConfiguration.test.tsx"/>
+      <file path="src/features/profiles/components/__tests__/ProfileForm.test.tsx"/>
+      <file path="src/features/profiles/hooks/__tests__/useProfile.test.ts"/>
+      <file path="src/features/profiles/pages/__tests__/ProfilePage.test.tsx"/>
+      <file path="tests/features/profiles/integration.test.ts"/>
+    </test-files>
+  </file-locations>
+
+  <testing-requirements>
+    <frameworks>
+      <framework name="Vitest" usage="Unit and integration tests"/>
+      <framework name="React Testing Library" usage="Component testing"/>
+      <framework name="MSW" usage="API mocking"/>
+    </frameworks>
+
+    <coverage-requirements>
+      <requirement>100% test coverage for profile hooks and utilities</requirement>
+      <requirement>Component tests for all form interactions and validation scenarios</requirement>
+      <requirement>Integration tests for profile updates and data persistence</requirement>
+      <requirement>Accessibility tests using appropriate testing libraries</requirement>
+    </coverage-requirements>
+
+    <key-test-scenarios>
+      <scenario>Profile form renders with existing user data</scenario>
+      <scenario>Form validation for all field types and edge cases</scenario>
+      <scenario>Profile updates persist correctly and trigger cache updates</scenario>
+      <scenario>Privacy settings integration with backend RLS policies</scenario>
+      <scenario>Reading preferences affect reader components appropriately</scenario>
+      <scenario>Error handling and optimistic updates</scenario>
+      <scenario>Loading states and user feedback mechanisms</scenario>
+      <scenario>Accessibility features and keyboard navigation</scenario>
+    </key-test-scenarios>
+
+    <test-example>
+      <description>Profile configuration form saves changes correctly</description>
+      <code>
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ProfileConfiguration } from '../ProfileConfiguration';
+
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: { queries: { retry: false } }
+});
+
+describe('ProfileConfiguration', () => {
+  it('should save profile changes', async () => {
+    const queryClient = createTestQueryClient();
+    const mockSave = jest.fn();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ProfileConfiguration userId="test-user" onSave={mockSave} />
+      </QueryClientProvider>
+    );
+
+    const displayNameInput = screen.getByLabelText('Display Name');
+    fireEvent.change(displayNameInput, { target: { value: 'New Name' } });
+
+    fireEvent.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({ display_name: 'New Name' })
+      );
+    });
+  });
+});
+      </code>
+    </test-example>
+  </testing-requirements>
+
+  <integration-points>
+    <point name="ProfilesRepository from Story 2.1" description="Use existing profile data access layer"/>
+    <point name="Existing auth system" description="Integrate with user context and authentication"/>
+    <point name="Reader preference system" description="Connect reading preferences to existing reader components"/>
+    <point name="RLS policies from Story 2.1" description="Privacy settings must work with backend access control"/>
+    <point name="React Query setup" description="Follow existing React Query patterns and configuration"/>
+  </integration-points>
+
+  <technical-constraints>
+    <constraint name="React Query patterns" description="Follow existing React Query setup and patterns"/>
+    <constraint name="Form handling" description="Use controlled components with proper state management"/>
+    <constraint name="Integration requirements" description="Must work with existing ProfilesRepository, auth system, and reader components"/>
+    <constraint name="Type safety" description="Use TypeScript interfaces for all component props and data structures"/>
+    <constraint name="Performance" description="Implement optimistic updates and proper cache management"/>
+  </technical-constraints>
+
+  <acceptance-criteria>
+    <criteria id="1">Create `/profile` route with ProfileConfiguration component</criteria>
+    <criteria id="2">Implement profile form with display name, avatar upload, bio fields</criteria>
+    <criteria id="3">Add reading preferences panel (font size, theme, reading speed, etc.)</criteria>
+    <criteria id="4">Create privacy settings controls for profile visibility and data sharing</criteria>
+    <criteria id="5">Implement form validation and optimistic updates with React Query</criteria>
+  </acceptance-criteria>
+
+  <integration-verification>
+    <verification id="IV1">Test profile updates persist correctly and sync across devices</verification>
+    <verification id="IV2">Verify form validation catches all edge cases appropriately</verification>
+    <verification id="IV3">Confirm privacy settings properly control profile information access</verification>
+  </integration-verification>
+
+  <sources>
+    <source path="docs/architecture/fullstack-launch-features.md" sections="Component Architecture, Data Models, API Specification"/>
+    <source path="docs/architecture/enhancement/source-tree.md" sections="Feature-based organization"/>
+    <source path="src/lib/repositories/profiles.ts" sections="ProfilesRepository from Story 2.1"/>
+    <source path="docs/stories/2.1.profile-database-schema-and-backend.md" sections="Previous story insights and patterns"/>
+    <source path="docs/prd/epic-and-story-structure.md" sections="Epic 2 and Story 2.2 requirements"/>
+  </sources>
+</story-context>

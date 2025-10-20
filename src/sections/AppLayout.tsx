@@ -2,11 +2,13 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import supabase from '../lib/supabaseClient'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/providers/ToastProvider'
+import { useProfileDetails } from '../features/profiles/hooks/useProfileDetails'
 
 const AppLayout = (): JSX.Element => {
   const { session, loading } = useSession()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { data: profile, isLoading: profileLoading } = useProfileDetails()
 
   const handleSignOut = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut()
@@ -63,9 +65,14 @@ const AppLayout = (): JSX.Element => {
 
           {/* Right: User menu */}
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden sm:inline text-foreground-muted">
-              <span className="font-medium text-foreground">{session.user.email}</span>
-            </span>
+            <Link
+              to="/profile"
+              className="hidden sm:inline text-foreground-muted hover:text-foreground transition-colors"
+            >
+              <span className="font-medium text-foreground">
+                {profileLoading ? 'Loading...' : (profile?.display_name ?? session.user.email)}
+              </span>
+            </Link>
             <button
               onClick={() => { void handleSignOut() }}
               className="btn btn-secondary text-xs py-1.5 px-3"
