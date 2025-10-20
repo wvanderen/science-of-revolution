@@ -6,13 +6,15 @@ interface ProfileFormProps {
   errors: Partial<Record<'displayName' | 'bio', string>>
   onFieldChange: (field: 'displayName' | 'bio', value: string) => void
   onAvatarChange: (value: string | null) => void
+  userId: string
 }
 
 export function ProfileForm ({
   values,
   errors,
   onFieldChange,
-  onAvatarChange
+  onAvatarChange,
+  userId
 }: ProfileFormProps): JSX.Element {
   return (
     <section className="rounded-xl border border-border bg-card/80 p-6 shadow-sm">
@@ -71,7 +73,11 @@ export function ProfileForm ({
             Pick an image that represents you. Uploading is coming soon, but you can link to a hosted image today.
           </p>
           <div className="mt-4">
-            <AvatarUpload value={values.avatarUrl} onChange={onAvatarChange} />
+            <AvatarUpload
+              userId={userId}
+              value={values.avatarUrl}
+              onChange={onAvatarChange}
+            />
           </div>
         </div>
       </div>

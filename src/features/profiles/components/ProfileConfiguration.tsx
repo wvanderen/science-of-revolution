@@ -206,6 +206,7 @@ export function ProfileConfiguration (): JSX.Element {
             errors={validationErrors}
             onFieldChange={handleFieldChange}
             onAvatarChange={handleAvatarChange}
+            userId={userId}
           />
 
           <ReadingPreferencesPanel

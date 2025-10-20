@@ -18,7 +18,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm run test:unit:*)",
       "Bash(npm run test)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

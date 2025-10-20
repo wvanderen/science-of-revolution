@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Powered by BMAD™ Core -->
+<storyContext version="1.0">
+  <storyInfo>
+    <id>2.3</id>
+    <title>Avatar Management and Media Handling</title>
+    <status>Draft</status>
+    <epic>2</epic>
+    <epicTitle>User Profile System</epicTitle>
+    <created>2025-10-20</created>
+    <scrumMaster>Bob</scrumMaster>
+  </storyInfo>
+
+  <dependencies>
+    <previousStories>
+      <story id="2.1" title="Profile Database Schema and Backend" status="Done">
+        <completionNotes>
+          - Extended profiles table with avatar_url field
+          - Created ProfilesRepository with CRUD operations
+          - Implemented proper RLS policies for profile access
+        </completionNotes>
+      </story>
+      <story id="2.2" title="Profile Configuration Interface" status="Done">
+        <completionNotes>
+          - Created placeholder AvatarUpload.tsx component with file selection
+          - Implemented profile form with avatar URL input
+          - Added React Query integration for profile updates
+          - Established feature structure under src/features/profiles/
+        </completionNotes>
+        <relevantComponents>
+          <component path="src/features/profiles/components/AvatarUpload.tsx" type="placeholder" />
+          <component path="src/features/profiles/components/ProfileConfiguration.tsx" type="complete" />
+          <component path="src/features/profiles/hooks/useProfileUpdate.ts" type="complete" />
+        </relevantComponents>
+      </story>
+    </previousStories>
+    <nextStories>
+      <story id="2.4" title="Profile Integration with Existing Features" status="Not Started">
+        <dependencyType>Will use completed avatar functionality</dependencyType>
+      </story>
+    </nextStories>
+  </dependencies>
+
+  <technicalContext>
+    <techStack>
+      <frontend>
+        <framework>React 18.3.1</framework>
+        <language>TypeScript 5.5.4</language>
+        <styling>Tailwind CSS 3.4.14</styling>
+        <stateManagement>React Query 5.50.1</stateManagement>
+        <testing>Vitest 2.1.4</testing>
+      </frontend>
+      <backend>
+        <platform>Supabase</platform>
+        <database>PostgreSQL 15+</database>
+        <storage>Supabase Storage</storage>
+        <auth>Supabase Auth</auth>
+      </backend>
+    </techStack>
+
+    <projectStructure>
+      <baseFeaturePath>src/features/profiles/</baseFeaturePath>
+      <components>
+        <path>src/features/profiles/components/</path>
+        <existing>
+          <file name="AvatarUpload.tsx" type="placeholder" note="Needs full implementation" />
+          <file name="ProfileConfiguration.tsx" type="complete" />
+          <file name="ProfileForm.tsx" type="complete" />
+          <file name="ProfilePreview.tsx" type="complete" />
+        </existing>
+        <toCreate>
+          <file name="ImageCropper.tsx" type="new" />
+          <file name="AvatarPreview.tsx" type="enhanced" />
+        </toCreate>
+      </components>
+      <hooks>
+        <path>src/features/profiles/hooks/</path>
+        <existing>
+          <file name="useProfileUpdate.ts" type="complete" />
+        </existing>
+        <toCreate>
+          <file name="useAvatarUpload.ts" type="new" />
+        </toCreate>
+      </hooks>
+      <services>
+        <path>src/features/profiles/services/</path>
+        <toCreate>
+          <file name="avatarService.ts" type="new" />
+        </toCreate>
+      </services>
+      <utils>
+        <path>src/features/profiles/utils/</path>
+        <toCreate>
+          <file name="imageCompression.ts" type="new" />
+        </toCreate>
+      </utils>
+    </projectStructure>
+
+    <dataModels>
+      <userProfile>
+        <interface>
+          <field name="id" type="string" />
+          <field name="display_name" type="string" />
+          <field name="avatar_url" type="string" optional="true" />
+          <field name="bio" type="string" optional="true" />
+          <field name="reading_preferences" type="object" />
+          <field name="privacy_settings" type="object" />
+          <field name="created_at" type="string" />
+          <field name="updated_at" type="string" />
+        </interface>
+        <source>docs/architecture/fullstack-launch-features.md lines 131-149</source>
+      </userProfile>
+      <avatarConstraints>
+        <supportedFormats>
+          <format>JPEG</format>
+          <format>PNG</format>
+          <format>WebP</format>
+          <format>GIF</format>
+        </supportedFormats>
+        <maxFileSize unit="MB">5</maxFileSize>
+        <outputSizes>
+          <size name="small" width="64" height="64" />
+          <size name="medium" width="128" height="128" />
+          <size name="large" width="256" height="256" />
+        </outputSizes>
+        <compressionTarget unit="KB">100</compressionTarget>
+      </avatarConstraints>
+    </dataModels>
+
+    <integrationPoints>
+      <supabaseStorage>
+        <bucket>avatars</bucket>
+        <accessPattern>user_id/filename.ext</accessPattern>
+        <rlsPolicies>
+          <policy>Users can only upload to their own folder</policy>
+          <policy>Public read access for avatar URLs</policy>
+          <policy>Authenticated users can update/delete their own avatars</policy>
+        </rlsPolicies>
+      </supabaseStorage>
+      <existingRepositories>
+        <repository name="ProfilesRepository" path="src/lib/repositories/profiles.ts" usage="updateProfile method for avatar_url field" />
+      </existingRepositories>
+      <existingHooks>
+        <hook name="useProfileUpdate" path="src/features/profiles/hooks/useProfileUpdate.ts" usage="Integration for avatar URL updates" />
+      </existingHooks>
+    </integrationPoints>
+  </technicalContext>
+
+  <implementationRequirements>
+    <acceptanceCriteria>
+      <criteria id="1">
+        <description>Implement avatar upload using Supabase Storage</description>
+        <technicalRequirements>
+          <requirement>Integrate with Supabase Storage SDK</requirement>
+          <requirement>Implement file upload service with progress tracking</requirement>
+          <requirement>Handle file type and size validation</requirement>
+        </technicalRequirements>
+      </criteria>
+      <criteria id="2">
+        <description>Add image compression and optimization for different device sizes</description>
+        <technicalRequirements>
+          <requirement>Client-side compression before upload</requirement>
+          <requirement>Multiple size generation (small, medium, large)</requirement>
+          <requirement>Format conversion support (WebP with fallbacks)</requirement>
+        </technicalRequirements>
+      </criteria>
+      <criteria id="3">
+        <description>Create avatar preview and cropping functionality</description>
+        <technicalRequirements>
+          <requirement>Interactive image cropping interface</requirement <requirement>Square aspect ratio constraint</requirement>
+          <requirement>Real-time preview with zoom controls</requirement>
+        </technicalRequirements>
+      </criteria>
+      <criteria id="4">
+        <description>Handle upload errors and fallback to default avatars</description>
+        <technicalRequirements>
+          <requirement>Comprehensive error handling</requirement>
+          <requirement>Fallback mechanisms for failed uploads</requirement>
+          <requirement>User-friendly error messages and recovery</requirement>
+        </technicalRequirements>
+      </criteria>
+      <criteria id="5">
+        <description>Support both camera capture and file selection on mobile</description>
+        <technicalRequirements>
+          <requirement>Mobile-optimized file selection</requirement>
+          <requirement>Camera capture functionality</requirement>
+          <requirement>Touch-friendly interface controls</requirement>
+        </technicalRequirements>
+      </criteria>
+    </acceptanceCriteria>
+
+    <technicalImplementation>
+      <keyComponents>
+        <component name="AvatarUpload" type="enhance" path="src/features/profiles/components/AvatarUpload.tsx">
+          <description>Replace placeholder with full upload functionality</description>
+          <props>
+            <prop name="userId" type="string" required="true" />
+            <prop name="value" type="string | null" />
+            <prop name="onChange" type="(value: string | null) => void" />
+            <prop name="disabled" type="boolean" default="false" />
+          </props>
+        </component>
+        <component name="useAvatarUpload" type="create" path="src/features/profiles/hooks/useAvatarUpload.ts">
+          <description>Custom hook for avatar upload logic</description>
+          <returns>
+            <return name="uploadAvatar" type="(file: File) => Promise<string>" />
+            <return name="isUploading" type="boolean" />
+            <return name="progress" type="number" />
+            <return name="error" type="string | null" />
+            <return name="cancelUpload" type="() => void" />
+          </returns>
+        </component>
+        <component name="avatarService" type="create" path="src/features/profiles/services/avatarService.ts">
+          <description>Service layer for avatar processing and upload</description>
+          <methods>
+            <method name="compressImage" signature="(file: File, size: Size) => Promise<Blob>" />
+            <method name="uploadToSupabase" signature="(file: File, userId: string) => Promise<string>" />
+            <method name="validateFile" signature="(file: File) => ValidationResult" />
+          </methods>
+        </component>
+        <component name="ImageCropper" type="create" path="src/features/profiles/components/ImageCropper.tsx">
+          <description>Interactive cropping interface</description>
+          <features>
+            <feature>Square aspect ratio</feature>
+            <feature>Zoom controls (0.5x - 3x)</feature>
+            <feature>Touch gestures support</feature>
+          </features>
+        </component>
+      </keyComponents>
+
+      <integrationPatterns>
+        <pattern name="React Query Integration">
+          <description>Use existing React Query patterns for optimistic updates</description>
+          <example>
+            <code>mutationFn: ({ userId, file }) => uploadAvatar(userId, file)</code>
+          </example>
+        </pattern>
+        <pattern name="Repository Pattern">
+          <description>Integrate with existing ProfilesRepository</description>
+          <usage>Update avatar_url field through repository</usage>
+        </pattern>
+        <pattern name="Feature-Based Organization">
+          <description>Follow established src/features/profiles/ structure</description>
+          <usage>Consistent with Story 2.2 organization</usage>
+        </pattern>
+      </integrationPatterns>
+    </technicalImplementation>
+
+    <testingRequirements>
+      <framework>Vitest</framework>
+      <coverageMinimum>90%</coverageMinimum>
+      <testCategories>
+        <category name="Unit Tests">
+          <targets>Image compression pipeline, upload service, utility functions</targets>
+        </category>
+        <category name="Component Tests">
+          <targets>AvatarUpload component, ImageCropper interface, user interactions</targets>
+        </category>
+        <category name="Integration Tests">
+          <targets>Complete upload flow, error scenarios, React Query integration</targets>
+        </category>
+        <category name="Accessibility Tests">
+          <targets>Keyboard navigation, screen reader support, touch accessibility</targets>
+        </category>
+        <category name="Mobile Tests">
+          <targets>Camera capture, touch gestures, responsive behavior</targets>
+        </category>
+      </testCategories>
+      <testFixtures>
+        <fixture name="sample-images" path="test-assets/images/" />
+        <fixture name="mock-supabase" path="test-utils/mockSupabase.ts" />
+      </testFixtures>
+    </testingRequirements>
+
+    <performanceConsiderations>
+      <imageProcessing>
+        <consideration>Use Web Workers to avoid UI blocking</consideration>
+        <consideration>Progressive image loading</consideration>
+        <consideration>Adaptive compression based on device capabilities</consideration>
+      </imageProcessing>
+      <uploadOptimization>
+        <consideration>Chunked upload for large files</consideration>
+        <consideration>Resume capability for interrupted uploads</consideration>
+        <consideration>Optimize for mobile networks</consideration>
+      </uploadOptimization>
+    </performanceConsiderations>
+
+    <securityRequirements>
+      <fileValidation>
+        <requirement>Server-side MIME type validation</requirement>
+        <requirement>File size limits at multiple levels</requirement>
+        <requirement>Scan for malicious content patterns</requirement>
+      </fileValidation>
+      <accessControl>
+        <requirement>User isolation in storage bucket</requirement>
+        <requirement>Public URLs with controlled access</requirement>
+        <requirement>Proper cleanup of old files</requirement>
+      </accessControl>
+    </securityRequirements>
+  </technicalContext>
+
+  <externalReferences>
+    <reference type="architecture" path="docs/architecture/fullstack-launch-features.md">
+      <sections>
+        <section line="131-149">UserProfile interface definition</section>
+        <section line="780-795">Avatar upload service pattern</section>
+        <section line="1076">Testing framework requirements</section>
+      </sections>
+    </reference>
+    <reference type="story" path="docs/stories/2.2.profile-configuration-interface.md">
+      <relevance>Previous story context and existing AvatarUpload placeholder</relevance>
+    </reference>
+    <reference type="codebase" path="src/features/profiles/">
+      <relevance>Existing feature structure and components to enhance</relevance>
+    </reference>
+  </externalReferences>
+
+  <devAgentInstructions>
+    <keyPrinciples>
+      <principle>Build on existing patterns from Story 2.2</principle>
+      <principle>Follow established file structure under src/features/profiles/</principle>
+      <principle>Use Supabase Storage with proper RLS policies</principle>
+      <principle>Implement comprehensive error handling</principle>
+      <principle>Ensure mobile accessibility and touch support</principle>
+    </keyPrinciples>
+
+    <implementationSequence>
+      <step order="1">Set up Supabase Storage bucket and RLS policies</step>
+      <step order="2">Create avatarService with compression and upload logic</step>
+      <step order="3">Implement useAvatarUpload hook with state management</step>
+      <step order="4">Enhance AvatarUpload component with full functionality</step>
+      <step order="5">Add ImageCropper component for interactive editing</step>
+      <step order="6">Implement mobile-specific features and camera capture</step>
+      <step order="7">Add comprehensive error handling and recovery</step>
+      <step order="8">Create test suites for all functionality</step>
+    </implementationSequence>
+
+    <criticalDependencies>
+      <dependency type="external" name="Supabase Storage configuration" status="required" />
+      <dependency type="internal" name="ProfilesRepository" status="existing" />
+      <dependency type="internal" name="React Query setup" status="existing" />
+      <dependency type="library" name="Image compression library" status="research" note="Find suitable client-side compression library" />
+      <dependency type="library" name="Image cropping library" status="research" note="react-easy-crop or similar" />
+    </criticalDependencies>
+
+    <successMetrics>
+      <metric name="Upload success rate" target="95%+">Successful uploads without errors</metric>
+      <metric name="Image compression efficiency" target="80%+ size reduction">Maintain visual quality while reducing file size</metric>
+      <metric name="Mobile compatibility" target="100%">Works on all target mobile devices</metric>
+      <metric name="Accessibility compliance" target="WCAG 2.1 AA">Keyboard navigation and screen reader support</metric>
+    </successMetrics>
+  </devAgentInstructions>
+</storyContext>
