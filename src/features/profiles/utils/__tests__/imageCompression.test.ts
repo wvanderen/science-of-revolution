@@ -4,6 +4,7 @@ import { compressImage, createSquareCrop, processAvatarImage, getImageDimensions
 // Mock canvas and image APIs
 const mockContext = {
   drawImage: vi.fn(),
+  toDataURL: vi.fn(() => 'data:image/jpeg;base64,mockdata'),
   toBlob: vi.fn((callback, mimeType, quality) => {
     // Simulate compression
     const mockBlob = new Blob(['compressed image data'], { type: mimeType || 'image/jpeg' })
@@ -14,13 +15,25 @@ const mockContext = {
 const mockCanvas = {
   width: 0,
   height: 0,
-  getContext: vi.fn(() => mockContext)
+  getContext: vi.fn(() => mockContext),
+  toDataURL: vi.fn(() => 'data:image/jpeg;base64,mockdata')
 } as any
 
 describe('imageCompression', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas)
+
+    // Setup global mocks for browser APIs
+    global.URL.createObjectURL = vi.fn(() => 'blob:test')
+    global.URL.revokeObjectURL = vi.fn()
+
+    // Mock document.createElement for canvas
+    vi.spyOn(document, 'createElement').mockImplementation((tagName) => {
+      if (tagName === 'canvas') {
+        return mockCanvas
+      }
+      return document.createElement(tagName)
+    })
   })
 
   describe('compressImage', () => {
@@ -33,9 +46,13 @@ describe('imageCompression', () => {
         onerror: null as any
       }
 
-      global.Image = vi.fn(() => mockImage) as any
-      global.URL.createObjectURL = vi.fn(() => 'blob:test')
-      global.URL.revokeObjectURL = vi.fn()
+      global.Image = vi.fn(() => {
+        // Simulate async image loading
+        setTimeout(() => {
+          if (mockImage.onload) mockImage.onload(new Event('load'))
+        }, 0)
+        return mockImage
+      }) as any
 
       const file = new File(['large image data'], 'test.jpg', { type: 'image/jpeg' })
       const result = await compressImage(file)
@@ -236,14 +253,12 @@ describe('imageCompression', () => {
       }
 
       global.Image = vi.fn(() => {
+        // Simulate async image loading
         setTimeout(() => {
           if (mockImage.onload) mockImage.onload(new Event('load'))
         }, 0)
         return mockImage
       }) as any
-
-      global.URL.createObjectURL = vi.fn(() => 'blob:test')
-      global.URL.revokeObjectURL = vi.fn()
 
       const file = new File(['image data'], 'test.jpg', { type: 'image/jpeg' })
       const result = await getImageDimensions(file)
@@ -261,14 +276,12 @@ describe('imageCompression', () => {
       }
 
       global.Image = vi.fn(() => {
+        // Simulate async image loading error
         setTimeout(() => {
           if (mockImage.onerror) mockImage.onerror(new Event('error'))
         }, 0)
         return mockImage
       }) as any
-
-      global.URL.createObjectURL = vi.fn(() => 'blob:test')
-      global.URL.revokeObjectURL = vi.fn()
 
       const file = new File(['image data'], 'test.jpg', { type: 'image/jpeg' })
 

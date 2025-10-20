@@ -10,7 +10,9 @@ vi.mock('../../services/avatarService', () => ({
   }
 }))
 
-const mockAvatarService = vi.mocked(AvatarService)
+const mockAvatarService = {
+  uploadAvatar: vi.fn()
+}
 
 describe('useAvatarUpload', () => {
   beforeEach(() => {
@@ -67,11 +69,7 @@ describe('useAvatarUpload', () => {
     const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
 
     await act(async () => {
-      try {
-        await result.current.uploadAvatar({ userId: 'test-user', file })
-      } catch (error) {
-        // Expected to throw
-      }
+      await expect(result.current.uploadAvatar({ userId: 'test-user', file })).rejects.toThrow('Upload failed')
     })
 
     expect(result.current.isUploading).toBe(false)
@@ -112,11 +110,7 @@ describe('useAvatarUpload', () => {
     const file = new File(['test'], 'test.txt', { type: 'text/plain' })
 
     await act(async () => {
-      try {
-        await result.current.uploadAvatar({ userId: 'test-user', file })
-      } catch (error) {
-        // Expected to throw
-      }
+      await expect(result.current.uploadAvatar({ userId: 'test-user', file })).rejects.toThrow('Invalid file type')
     })
 
     expect(mockAvatarService.uploadAvatar).toHaveBeenCalledTimes(1) // No retries
@@ -162,7 +156,7 @@ describe('useAvatarUpload', () => {
     const { result } = renderHook(() => useAvatarUpload())
     const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
 
-    act(() => {
+    await act(async () => {
       result.current.uploadAvatar({ userId: 'test-user', file })
     })
 

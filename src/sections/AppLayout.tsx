@@ -3,6 +3,7 @@ import supabase from '../lib/supabaseClient'
 import { useSession } from '../hooks/useSession'
 import { useToast } from '../components/providers/ToastProvider'
 import { useProfileDetails } from '../features/profiles/hooks/useProfileDetails'
+import { UserAvatar } from '../features/profiles/components/UserAvatar'
 
 const AppLayout = (): JSX.Element => {
   const { session, loading } = useSession()
@@ -67,9 +68,21 @@ const AppLayout = (): JSX.Element => {
           <div className="flex items-center gap-3 text-sm">
             <Link
               to="/profile"
-              className="hidden sm:inline text-foreground-muted hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors group"
             >
-              <span className="font-medium text-foreground">
+              <div className="relative">
+                <UserAvatar
+                  src={profile?.avatar_url}
+                  alt={`${profile?.display_name ?? session.user.email} avatar`}
+                  size="small"
+                  fallback={profile?.display_name ?? session.user.email ?? ''}
+                  className="ring-2 ring-border group-hover:ring-primary/50 transition-all"
+                />
+                {profileLoading && (
+                  <div className="absolute inset-0 animate-pulse bg-muted rounded-full" />
+                )}
+              </div>
+              <span className="hidden sm:inline font-medium text-foreground group-hover:text-primary transition-colors">
                 {profileLoading ? 'Loading...' : (profile?.display_name ?? session.user.email)}
               </span>
             </Link>
