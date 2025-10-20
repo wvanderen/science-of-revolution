@@ -3,23 +3,24 @@ import { useSession } from '../../../hooks/useSession'
 import supabase from '../../../lib/supabaseClient'
 import { type Database } from '../../../lib/database.types'
 
-type ReaderPreferences = Database['public']['Tables']['profiles']['Row']['reader_preferences']
+type ReadingPreferences = Database['public']['Tables']['profiles']['Row']['reading_preferences']
 
 interface UseReaderPreferencesResult {
-  preferences: ReaderPreferences
+  preferences: ReadingPreferences
   isLoading: boolean
   error: Error | null
-  updatePreferences: (preferences: Partial<ReaderPreferences>) => Promise<void>
+  updatePreferences: (preferences: Partial<ReadingPreferences>) => Promise<void>
 }
 
-const DEFAULT_PREFERENCES: ReaderPreferences = {
+const DEFAULT_PREFERENCES: ReadingPreferences = {
+  font_size: 18,
+  font_family: 'serif',
   theme: 'light',
-  fontFamily: 'serif',
-  fontSize: 18
+  reading_speed: 'normal'
 }
 
 /**
- * Hook to fetch and update user reader preferences
+ * Hook to fetch and update user reading preferences
  */
 export function useReaderPreferences (): UseReaderPreferencesResult {
   const { session } = useSession()
@@ -36,7 +37,7 @@ export function useReaderPreferences (): UseReaderPreferencesResult {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('reader_preferences')
+        .select('reading_preferences')
         .eq('id', userId)
         .single()
 
@@ -44,27 +45,27 @@ export function useReaderPreferences (): UseReaderPreferencesResult {
         throw error
       }
 
-      return data.reader_preferences ?? DEFAULT_PREFERENCES
+      return data.reading_preferences ?? DEFAULT_PREFERENCES
     },
     enabled: userId != null
   })
 
   // Mutation to update preferences
   const mutation = useMutation({
-    mutationFn: async (newPreferences: Partial<ReaderPreferences>) => {
+    mutationFn: async (newPreferences: Partial<ReadingPreferences>) => {
       if (userId == null) {
         throw new Error('User not authenticated')
       }
 
       const currentPreferences = data ?? DEFAULT_PREFERENCES
-      const updatedPreferences = {
+      const updatedPreferences: ReadingPreferences = {
         ...currentPreferences,
         ...newPreferences
       }
 
       const { error } = await supabase
         .from('profiles')
-        .update({ reader_preferences: updatedPreferences })
+        .update({ reading_preferences: updatedPreferences })
         .eq('id', userId)
 
       if (error != null) {
@@ -83,7 +84,7 @@ export function useReaderPreferences (): UseReaderPreferencesResult {
     preferences: data ?? DEFAULT_PREFERENCES,
     isLoading,
     error: error as Error | null,
-    updatePreferences: async (preferences: Partial<ReaderPreferences>) => {
+    updatePreferences: async (preferences: Partial<ReadingPreferences>) => {
       await mutation.mutateAsync(preferences)
     }
   }

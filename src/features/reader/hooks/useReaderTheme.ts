@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type ReaderTheme = 'light' | 'dark' | 'sepia'
+export type ReaderTheme = 'light' | 'dark'
 export type ReaderFontSize = 'sm' | 'base' | 'lg' | 'xl'
 
 interface ReaderThemeState {
@@ -49,13 +49,11 @@ function applyThemeToDocument (theme: ReaderTheme): void {
   const root = document.documentElement
 
   // Remove all theme classes
-  root.classList.remove('dark', 'sepia')
+  root.classList.remove('dark')
 
   // Add the selected theme class (light is default, no class needed)
   if (theme === 'dark') {
     root.classList.add('dark')
-  } else if (theme === 'sepia') {
-    root.classList.add('sepia')
   }
 }
 

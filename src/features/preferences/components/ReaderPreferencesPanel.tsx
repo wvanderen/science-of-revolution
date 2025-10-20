@@ -6,8 +6,9 @@ interface ReaderPreferencesPanelProps {
   onClose: () => void
 }
 
-type Theme = 'light' | 'dark' | 'sepia' | 'high-contrast'
+type Theme = 'light' | 'dark'
 type FontFamily = 'serif' | 'sans'
+type ReadingSpeed = 'slow' | 'normal' | 'fast'
 
 /**
  * Panel for adjusting reader preferences (theme, font, size)
@@ -16,14 +17,16 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
   const { preferences, updatePreferences } = useReaderPreferences()
 
   const [theme, setTheme] = useState<Theme>(preferences.theme ?? 'light')
-  const [fontFamily, setFontFamily] = useState<FontFamily>(preferences.fontFamily ?? 'serif')
-  const [fontSize, setFontSize] = useState<number>(preferences.fontSize ?? 18)
+  const [fontFamily, setFontFamily] = useState<FontFamily>(preferences.font_family ?? 'serif')
+  const [fontSize, setFontSize] = useState<number>(preferences.font_size ?? 18)
+  const [readingSpeed, setReadingSpeed] = useState<ReadingSpeed>(preferences.reading_speed ?? 'normal')
 
   // Sync local state with preferences
   useEffect(() => {
     setTheme(preferences.theme ?? 'light')
-    setFontFamily(preferences.fontFamily ?? 'serif')
-    setFontSize(preferences.fontSize ?? 18)
+    setFontFamily(preferences.font_family ?? 'serif')
+    setFontSize(preferences.font_size ?? 18)
+    setReadingSpeed(preferences.reading_speed ?? 'normal')
   }, [preferences])
 
   const handleThemeChange = async (newTheme: Theme): Promise<void> => {
@@ -33,12 +36,17 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
 
   const handleFontFamilyChange = async (newFontFamily: FontFamily): Promise<void> => {
     setFontFamily(newFontFamily)
-    await updatePreferences({ fontFamily: newFontFamily })
+    await updatePreferences({ font_family: newFontFamily })
   }
 
   const handleFontSizeChange = async (newSize: number): Promise<void> => {
     setFontSize(newSize)
-    await updatePreferences({ fontSize: newSize })
+    await updatePreferences({ font_size: newSize })
+  }
+
+  const handleReadingSpeedChange = async (newSpeed: ReadingSpeed): Promise<void> => {
+    setReadingSpeed(newSpeed)
+    await updatePreferences({ reading_speed: newSpeed })
   }
 
   if (!isOpen) return null
@@ -82,7 +90,7 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
               Theme
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {(['light', 'dark', 'sepia', 'high-contrast'] as const).map((themeOption) => (
+              {(['light', 'dark'] as const).map((themeOption) => (
                 <button
                   key={themeOption}
                   onClick={() => { void handleThemeChange(themeOption) }}
@@ -92,7 +100,7 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
                       : 'border-border bg-background text-foreground hover:bg-surface'
                   }`}
                 >
-                  {themeOption === 'high-contrast' ? 'High Contrast' : themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
+                  {themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
                 </button>
               ))}
             </div>
@@ -149,6 +157,28 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
             </div>
           </div>
 
+          {/* Reading Speed */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">
+              Reading Pace
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['slow', 'normal', 'fast'] as const).map((speed) => (
+                <button
+                  key={speed}
+                  onClick={() => { void handleReadingSpeedChange(speed) }}
+                  className={`px-4 py-2 text-sm rounded-md border transition-colors ${
+                    readingSpeed === speed
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background text-foreground hover:bg-surface'
+                  }`}
+                >
+                  {speed.charAt(0).toUpperCase() + speed.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Preview Text */}
           <div className="p-4 border border-border rounded-lg bg-background">
             <p className="text-foreground-muted text-xs mb-2">Preview</p>
@@ -162,6 +192,10 @@ export function ReaderPreferencesPanel ({ isOpen, onClose }: ReaderPreferencesPa
               }}
             >
               The quick brown fox jumps over the lazy dog. This is how your reading text will appear.
+              <br />
+              <span className="text-sm text-foreground-muted">
+                Reading pace: <span className="font-semibold capitalize text-foreground">{readingSpeed}</span>
+              </span>
             </p>
           </div>
         </div>

@@ -274,7 +274,7 @@ function ReaderPageInner (): JSX.Element {
           ref={setScrollContainerRef}
           className="flex-1 min-h-0 overflow-y-auto pt-16"
         >
-          <ReaderSectionNavigator contentRef={containerRef}>
+          <ReaderSectionNavigator contentRef={refs.getScrollContainerRef()}>
             {({ currentSectionId: navSectionId, registerSectionRef, handleSectionChange }) => (
               <>
                 {/* Fixed header that stays at top */}
@@ -292,8 +292,8 @@ function ReaderPageInner (): JSX.Element {
                 <ReaderContent
                   sections={resource.sections}
                   sectionHighlights={sectionHighlights}
-                  contentRef={containerRef}
-                  paragraphNavigationRef={containerRef}
+                  contentRef={refs.getScrollContainerRef()}
+                  paragraphNavigationRef={refs.getScrollContainerRef()}
                   onHighlightClick={highlighting.handleHighlightClick}
                   onSectionRef={registerSectionRef}
                 />

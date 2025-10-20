@@ -1,9 +1,10 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { type UseMutationResult, type UseQueryResult } from '@tanstack/react-query'
 import { useReaderHighlighting } from '../useReaderHighlighting'
 import { useTextSelection } from '../../../highlights/hooks/useTextSelection'
-import { useHighlights, useCreateHighlight, useDeleteHighlight } from '../../../highlights/hooks/useHighlights'
-import { getTextSelection } from '../../../highlights/utils/textAnchoring'
+import { useHighlights, useCreateHighlight, useDeleteHighlight, type HighlightWithNote, type CreateHighlightParams } from '../../../highlights/hooks/useHighlights'
+import { getTextSelection, type TextSelection } from '../../../highlights/utils/textAnchoring'
 
 // Mock the dependencies
 vi.mock('../../../highlights/hooks/useTextSelection')
@@ -18,8 +19,17 @@ describe('useReaderHighlighting', () => {
   const mockDeleteHighlight = vi.fn()
   const mockGetTextSelection = vi.mocked(getTextSelection)
 
-  const mockSelection = {
+  const mockSelection: TextSelection & {
+    range: {
+      startContainer: HTMLDivElement
+      endContainer: HTMLDivElement
+      startOffset: number
+      endOffset: number
+    }
+  } = {
     text: 'selected text',
+    startPos: 0,
+    endPos: 10,
     range: {
       startContainer: document.createElement('div'),
       endContainer: document.createElement('div'),
@@ -28,16 +38,18 @@ describe('useReaderHighlighting', () => {
     }
   }
 
-  const mockHighlight = {
+  const mockHighlight: HighlightWithNote = {
     id: 'highlight-1',
+    user_id: 'user-1',
     resource_section_id: 'section-1',
     start_pos: 0,
     end_pos: 10,
     color: 'yellow',
-    visibility_level: 'private' as const,
+    visibility: 'private',
     text_content: 'selected text',
     created_at: '2025-01-01T00:00:00Z',
-    updated_at: '2025-01-01T00:00:00Z'
+    updated_at: '2025-01-01T00:00:00Z',
+    note: null
   }
 
   beforeEach(() => {
@@ -53,19 +65,19 @@ describe('useReaderHighlighting', () => {
       data: [],
       isLoading: false,
       error: null
-    })
+    } as unknown as UseQueryResult<HighlightWithNote[], Error>)
 
     vi.mocked(useCreateHighlight).mockReturnValue({
       mutateAsync: mockCreateHighlight,
       isPending: false,
       error: null
-    })
+    } as unknown as UseMutationResult<any, Error, CreateHighlightParams, unknown>)
 
     vi.mocked(useDeleteHighlight).mockReturnValue({
       mutateAsync: mockDeleteHighlight,
       isPending: false,
       error: null
-    })
+    } as unknown as UseMutationResult<void, Error, string, unknown>)
 
     // Mock window.getSelection
     const mockRange = {
@@ -242,16 +254,38 @@ describe('useReaderHighlighting', () => {
       })
     )
 
-    // Set up menu
+    // Set up mock highlights data
+    const mockHighlight = {
+      id: 'highlight-1',
+      user_id: 'user-1',
+      resource_section_id: 'section-1',
+      start_pos: 0,
+      end_pos: 10,
+      color: 'yellow',
+      visibility: 'private',
+      text_content: 'test highlight',
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z',
+      note: null
+    }
+
+    // Set up menu and mock highlights
     act(() => {
+      result.current.setSectionHighlights({ 'section-1': [mockHighlight] })
       result.current.setSelectedHighlightId('highlight-1')
       result.current.setMenuPosition({ x: 100, y: 200 })
     })
+
+    // Debug: Check the initial state
+    expect(result.current.noteHighlightId).toBeNull()
+    expect(result.current.selectedHighlightId).toBe('highlight-1')
+    expect(result.current.menuPosition).toEqual({ x: 100, y: 200 })
 
     act(() => {
       result.current.handleAddNote('highlight-1')
     })
 
+    // State updates should be processed immediately in React 18+
     expect(result.current.noteHighlightId).toBe('highlight-1')
     expect(result.current.selectedHighlightId).toBeNull()
     expect(result.current.menuPosition).toBeNull()
@@ -266,8 +300,24 @@ describe('useReaderHighlighting', () => {
       })
     )
 
-    // Set up menu and note
+    // Set up mock highlights data
+    const mockHighlight = {
+      id: 'highlight-1',
+      user_id: 'user-1',
+      resource_section_id: 'section-1',
+      start_pos: 0,
+      end_pos: 10,
+      color: 'yellow',
+      visibility: 'private',
+      text_content: 'test highlight',
+      created_at: '2025-01-01T00:00:00Z',
+      updated_at: '2025-01-01T00:00:00Z',
+      note: null
+    }
+
+    // Set up menu, note, and mock highlights
     act(() => {
+      result.current.setSectionHighlights({ 'section-1': [mockHighlight] })
       result.current.setSelectedHighlightId('highlight-1')
       result.current.setMenuPosition({ x: 100, y: 200 })
       result.current.setNoteHighlightId('highlight-1')
@@ -313,10 +363,12 @@ describe('useReaderHighlighting', () => {
   })
 
   it('should provide correct note highlight lookup', () => {
-    const highlightWithNote = {
+    const highlightWithNote: HighlightWithNote = {
       ...mockHighlight,
       note: {
         id: 'note-1',
+        highlight_id: mockHighlight.id,
+        user_id: 'user-1',
         content: 'Test note',
         created_at: '2025-01-01T00:00:00Z',
         updated_at: '2025-01-01T00:00:00Z'

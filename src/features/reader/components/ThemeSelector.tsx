@@ -8,8 +8,7 @@ export function ThemeSelector (): JSX.Element {
 
   const themes: Array<{ value: ReaderTheme, label: string }> = [
     { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-    { value: 'sepia', label: 'Sepia' }
+    { value: 'dark', label: 'Dark' }
   ]
 
   const fontSizes: Array<{ value: ReaderFontSize, label: string }> = [

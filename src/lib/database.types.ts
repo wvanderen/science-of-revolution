@@ -49,10 +49,16 @@ export interface Database {
           primary_cohort_id: string | null
           avatar_url: string | null
           bio: string | null
-          reader_preferences: {
-            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
-            fontFamily?: 'serif' | 'sans'
-            fontSize?: number
+          reading_preferences: {
+            font_size: number
+            font_family: 'serif' | 'sans'
+            theme: 'light' | 'dark'
+            reading_speed: 'slow' | 'normal' | 'fast'
+          }
+          privacy_settings: {
+            profile_visibility: 'public' | 'cohorts' | 'private'
+            share_reading_progress: boolean
+            allow_shared_notes: boolean
           }
           created_at: string
           updated_at: string
@@ -64,10 +70,16 @@ export interface Database {
           primary_cohort_id?: string | null
           avatar_url?: string | null
           bio?: string | null
-          reader_preferences?: {
-            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
-            fontFamily?: 'serif' | 'sans'
-            fontSize?: number
+          reading_preferences?: {
+            font_size?: number
+            font_family?: 'serif' | 'sans'
+            theme?: 'light' | 'dark'
+            reading_speed?: 'slow' | 'normal' | 'fast'
+          }
+          privacy_settings?: {
+            profile_visibility?: 'public' | 'cohorts' | 'private'
+            share_reading_progress?: boolean
+            allow_shared_notes?: boolean
           }
           created_at?: string
           updated_at?: string
@@ -79,10 +91,16 @@ export interface Database {
           primary_cohort_id?: string | null
           avatar_url?: string | null
           bio?: string | null
-          reader_preferences?: {
-            theme?: 'light' | 'dark' | 'sepia' | 'high-contrast'
-            fontFamily?: 'serif' | 'sans'
-            fontSize?: number
+          reading_preferences?: {
+            font_size?: number
+            font_family?: 'serif' | 'sans'
+            theme?: 'light' | 'dark'
+            reading_speed?: 'slow' | 'normal' | 'fast'
+          }
+          privacy_settings?: {
+            profile_visibility?: 'public' | 'cohorts' | 'private'
+            share_reading_progress?: boolean
+            allow_shared_notes?: boolean
           }
           created_at?: string
           updated_at?: string

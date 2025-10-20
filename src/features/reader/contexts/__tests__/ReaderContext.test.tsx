@@ -2,6 +2,25 @@ import { render, screen } from '@testing-library/react'
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ReaderProvider, useReader } from '../ReaderContext'
+import { type HighlightWithNote } from '../../../highlights/hooks/useHighlights'
+
+const makeHighlight = (overrides: Partial<HighlightWithNote> = {}): HighlightWithNote => {
+  const timestamp = '2025-10-19T12:00:00.000Z'
+  return {
+    id: 'highlight-id',
+    user_id: 'user-1',
+    resource_section_id: 'section-1',
+    start_pos: 0,
+    end_pos: 10,
+    text_content: 'Sample highlight',
+    color: 'yellow',
+    visibility: 'private',
+    created_at: timestamp,
+    updated_at: timestamp,
+    note: null,
+    ...overrides
+  }
+}
 
 // Test wrapper component
 function TestComponent({ children }: { children?: React.ReactNode }) {
@@ -143,7 +162,11 @@ describe('ReaderProvider', () => {
       wrapper: TestComponent
     })
 
-    const newHighlights = { 'section-1': [{ id: 'h1', text: 'Test highlight', note: '' }] }
+    const newHighlights = {
+      'section-1': [
+        makeHighlight({ id: 'h1', text_content: 'Test highlight' })
+      ]
+    }
 
     // Test direct value assignment
     act(() => {
@@ -155,7 +178,9 @@ describe('ReaderProvider', () => {
     act(() => {
       result.current.actions.setSectionHighlights(prev => ({
         ...prev,
-        'section-2': [{ id: 'h2', text: 'Another highlight', note: '' }]
+        'section-2': [
+          makeHighlight({ id: 'h2', resource_section_id: 'section-2', text_content: 'Another highlight' })
+        ]
       }))
     })
 

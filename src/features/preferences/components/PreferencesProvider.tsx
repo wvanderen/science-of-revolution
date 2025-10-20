@@ -15,8 +15,9 @@ export function PreferencesProvider ({ children }: PreferencesProviderProps): JS
   useEffect(() => {
     const root = document.documentElement
     const theme = preferences.theme ?? 'light'
-    const fontFamily = preferences.fontFamily ?? 'serif'
-    const fontSize = preferences.fontSize ?? 18
+    const fontFamily = preferences.font_family ?? 'serif'
+    const fontSize = preferences.font_size ?? 18
+    const readingSpeed = preferences.reading_speed ?? 'normal'
 
     // Remove all theme classes
     root.classList.remove('dark', 'sepia', 'high-contrast')
@@ -32,6 +33,7 @@ export function PreferencesProvider ({ children }: PreferencesProviderProps): JS
 
     // Apply font size as CSS variable
     root.style.setProperty('--reader-font-size', `${fontSize}px`)
+    root.style.setProperty('--reader-reading-speed', readingSpeed)
   }, [preferences])
 
   return <>{children}</>

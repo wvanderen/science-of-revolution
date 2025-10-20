@@ -20,11 +20,12 @@ export function HighlightMarker ({
   onClick
 }: HighlightMarkerProps): JSX.Element {
   const { preferences } = useReaderPreferences()
-  const bgColor = getHighlightColorForTheme(highlight.color, preferences.theme || 'light')
+  const theme = preferences.theme ?? 'light'
+  const bgColor = getHighlightColorForTheme(highlight.color, theme)
 
   // Determine text color based on theme
   let textColorClass = 'text-black'
-  if (preferences.theme === 'dark' || preferences.theme === 'high-contrast') {
+  if (theme === 'dark') {
     textColorClass = 'text-white'
   }
 

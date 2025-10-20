@@ -37,16 +37,6 @@ describe('useReaderTheme', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
 
-  it('applies sepia theme class to document', () => {
-    const { result } = renderHook(() => useReaderTheme())
-
-    act(() => {
-      result.current.setTheme('sepia')
-    })
-
-    expect(document.documentElement.classList.contains('sepia')).toBe(true)
-  })
-
   it('removes theme classes for light theme', () => {
     const { result } = renderHook(() => useReaderTheme())
 
@@ -61,7 +51,6 @@ describe('useReaderTheme', () => {
     })
 
     expect(document.documentElement.classList.contains('dark')).toBe(false)
-    expect(document.documentElement.classList.contains('sepia')).toBe(false)
   })
 
   it('updates font size', () => {

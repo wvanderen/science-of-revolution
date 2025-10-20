@@ -27,7 +27,8 @@ export function ReaderContent ({
   onSectionRef
 }: ReaderContentProps): JSX.Element {
   const { preferences } = useReaderPreferences()
-  const { fontFamily, fontSize } = preferences
+  const fontFamily = preferences.font_family ?? 'serif'
+  const fontSize = preferences.font_size ?? 18
 
   // Apply highlights for each section based on current theme
   const highlightedContentBySection = useMemo(() => {

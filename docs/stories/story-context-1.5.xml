@@ -1,0 +1,163 @@
+<story-context id="story-1.5" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>5</storyId>
+    <title>Reader Layout and Coordination Component</title>
+    <status>Ready for Review</status>
+    <generatedAt>2025-10-19T18:25:34-05:00</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1.5.reader-layout-and-coordination-component.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer maintaining the reader interface</asA>
+    <iWant>a clean layout coordinator component that manages all reader sub-components</iWant>
+    <soThat>the reader interface is organized and components communicate effectively</soThat>
+    <tasks><![CDATA[
+- Task 1: Analyze current ReaderPage layout structure, responsive behavior, and component relationships.
+- Task 2: Create useReaderLayout hook with responsive configuration, breakpoint handling, and layout state persistence.
+- Task 3: Implement ReaderLayoutManager component coordinating responsive layout with the layout hook.
+- Task 4: Build ReaderCore component coordinating progress tracking, navigation, highlighting, and scroll logic.
+- Task 5: Integrate new components into ReaderPage while preserving ReaderContext communication and reader functionality.
+- Task 6: Validate visual parity, responsive behavior, component interactions, and performance across the reader experience.
+    ]]></tasks>
+  </story>
+
+  <acceptanceCriteria><![CDATA[
+1. Create src/features/reader/components/ReaderLayoutManager.tsx main coordinator.
+2. Create src/features/reader/components/ReaderCore.tsx for the main reading area.
+3. Assemble all extracted components into a cohesive reader interface.
+4. Ensure component communication through ReaderContext works smoothly.
+5. Maintain exact visual layout and responsive behavior of current reader.
+  ]]></acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd/epic-and-story-structure.md</path>
+        <title>Epic and Story Structure</title>
+        <section>Story 1.5</section>
+        <snippet>Outlines Story 1.5 acceptance criteria to deliver ReaderLayoutManager and ReaderCore, assemble the reader interface, keep ReaderContext communication intact, and preserve existing responsive behaviour with matching visual layout.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/reader-rearchitecture/phase-3-layout-and-coordination-weeks-3-4.md</path>
+        <title>Reader Rearchitecture — Phase 3</title>
+        <section>Step 3.1: ReaderLayoutManager</section>
+        <snippet>Provides objectives, interface definitions, responsive design requirements, and testing expectations for the layout management hook and ReaderLayoutManager component, emphasising identical behaviour to the current implementation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture/enhancement/component-architecture.md</path>
+        <title>Component Architecture Enhancements</title>
+        <section>ReaderLayoutManager</section>
+        <snippet>Describes ReaderLayoutManager responsibility for layout coordination and responsive behaviour, integrating ReaderCore, ReaderToolbar, and preferences, and maps component relationships in the reader system.</snippet>
+      </doc>
+      <doc>
+        <path>docs/qa/gates/1.5.reader-layout-and-coordination-component.yml</path>
+        <title>QA Gate — Story 1.5</title>
+        <section>Gate Status</section>
+        <snippet>Records a FAIL gate due to the blank content defect triggered by component integration, noting the fix requires validation and highlighting follow-up actions for ReaderCore tests and context passing.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/features/reader/pages/ReaderPage.tsx</path>
+        <kind>page component</kind>
+        <symbol>ReaderPage</symbol>
+        <lines>1-360</lines>
+        <reason>Orchestrates ReaderLayoutManager, ReaderToolbar, ReaderCore, and highlighting components; current child ordering exposes the blank content bug when layout manager only renders the first two children.</reason>
+      </artifact>
+      <artifact>
+        <path>src/features/reader/components/ReaderLayoutManager.tsx</path>
+        <kind>layout component</kind>
+        <symbol>ReaderLayoutManager</symbol>
+        <lines>1-215</lines>
+        <reason>Controls responsive layout slots and currently indexes children arrays, which drops additional React nodes such as ReaderCore and overlays.</reason>
+      </artifact>
+      <artifact>
+        <path>src/features/reader/components/ReaderCore.tsx</path>
+        <kind>coordinator component</kind>
+        <symbol>ReaderCore</symbol>
+        <lines>1-280</lines>
+        <reason>Coordinates progress tracking, section navigation, and highlighting; duplication of highlight UI and wrapping logic must align with ReaderPage integration.</reason>
+      </artifact>
+      <artifact>
+        <path>src/features/reader/hooks/useReaderLayout.ts</path>
+        <kind>hook</kind>
+        <symbol>useReaderLayout</symbol>
+        <lines>1-220</lines>
+        <reason>Provides layoutConfig, breakpoint detection, and persistence that ReaderLayoutManager relies on for responsive behaviour.</reason>
+      </artifact>
+      <artifact>
+        <path>src/features/reader/contexts/ReaderContext.tsx</path>
+        <kind>context</kind>
+        <symbol>ReaderProvider</symbol>
+        <lines>1-220</lines>
+        <reason>Supplies reader state, actions, and refs that must flow through the new component architecture to satisfy AC4.</reason>
+      </artifact>
+      <artifact>
+        <path>src/features/reader/components/ReaderContent.tsx</path>
+        <kind>content component</kind>
+        <symbol>ReaderContent</symbol>
+        <lines>1-160</lines>
+        <reason>Renders section HTML with applied highlights and navigation refs; depends on correct props from ReaderCore&apos;s child render function.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="react" version="18.3.1"/>
+        <package name="react-dom" version="18.3.1"/>
+        <package name="react-router-dom" version="6.28.0"/>
+        <package name="@tanstack/react-query" version="5.50.1"/>
+        <package name="zustand" version="4.5.2"/>
+        <package name="tailwindcss" version="3.4.14"/>
+        <package name="vitest" version="2.1.4"/>
+        <package name="@testing-library/react" version="16.1.0"/>
+        <package name="@playwright/test" version="1.48.2"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="Story 1.5 Technical Constraints">Must maintain existing responsive design breakpoints exactly and coordinate layout across breakpoints without regressions.</constraint>
+    <constraint source="Story 1.5 Technical Constraints">Component communication should flow through ReaderContext and avoid prop drilling, reusing established interfaces from earlier stories.</constraint>
+    <constraint source="Reader Rearchitecture — Phase 3">Layout and core components must deliver identical behaviour to the current implementation with 100% test coverage.</constraint>
+    <constraint source="QA Gate — Story 1.5">Blank content regression fix must be validated in browser and accompanied by corrected tests before status may advance.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>ReaderLayoutManagerProps</name>
+      <kind>React component props</kind>
+      <signature>children: ReactNode; className?: string; isMobile?: boolean; breakpoints?: { mobile: number; tablet: number; desktop: number }; preferences?: { theme: 'light' | 'dark' | 'sepia' | 'high-contrast'; fontSize: number; fontFamily: 'serif' | 'sans'; lineHeight: number };</signature>
+      <path>src/features/reader/components/ReaderLayoutManager.tsx</path>
+    </interface>
+    <interface>
+      <name>ReaderCoreProps</name>
+      <kind>React component props</kind>
+      <signature>documentId: string; sections: Array&lt;{ id: string; title: string; content: string; order: number }&gt;; initialSectionId?: string; onProgressUpdate?: (progress: number) =&gt; void; onSectionChange?: (sectionId: string) =&gt; void; className?: string; children?: ReactNode;</signature>
+      <path>src/features/reader/components/ReaderCore.tsx</path>
+    </interface>
+    <interface>
+      <name>UseReaderLayoutReturn</name>
+      <kind>hook return type</kind>
+      <signature>{ layoutConfig: LayoutConfig; updateLayout: (config: Partial&lt;LayoutConfig&gt;) =&gt; void; toggleSidebar: () =&gt; void; isMobile: boolean; breakpoints: { mobile: number; tablet: number; desktop: number }; currentBreakpoint: 'mobile' | 'tablet' | 'desktop' };</signature>
+      <path>src/features/reader/hooks/useReaderLayout.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Vitest with Testing Library covers reader hooks and components, while Playwright exercises story validation flows; linting and type checks are mandatory via npm run lint and npm run typecheck before delivery.</standards>
+    <locations>
+      <location>src/features/reader/hooks/__tests__</location>
+      <location>src/features/reader/components/__tests__</location>
+      <location>tests/e2e/story-validation</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Add a ReaderLayoutManager test verifying all provided child nodes render in predictable slots and that additional nodes are not discarded when toolbarPosition is top.</idea>
+      <idea ac="2">Extend ReaderCore tests to cover function-as-children usage, ensuring navigation callbacks and section refs reach ReaderContent.</idea>
+      <idea ac="3">Introduce an integration test in ReaderPage verifying ReaderCore content renders with highlights when wrapped by ReaderLayoutManager.</idea>
+      <idea ac="4">Verify ReaderContext state flows through ReaderPage by asserting currentSectionId updates when ReaderCore invokes onSectionChange.</idea>
+      <idea ac="5">Add a Playwright responsive snapshot verifying toolbar and content areas remain visible across mobile, tablet, and desktop breakpoints after layout refactor.</idea>
+    </ideas>
+  </tests>
+</story-context>

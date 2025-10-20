@@ -1,0 +1,192 @@
+<story-context id="story-2.1" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Profile Database Schema and Backend</title>
+    <status>Ready for Development</status>
+    <generatedAt>2025-10-19T19:15:00-05:00</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2.1.profile-database-schema-and-backend.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>extended user profile data stored securely in the database</iWant>
+    <soThat>users can have persistent preferences and personalized experiences</soThat>
+    <tasks><![CDATA[
+- Task 1: Analyze existing profiles table structure and identify extensions needed for enhanced profile functionality.
+- Task 2: Design database schema extensions with backward compatibility and proper constraints for new profile fields.
+- Task 3: Create Supabase migration script with ALTER TABLE statements, proper defaults, and rollback capability.
+- Task 4: Update TypeScript database types by regenerating database.types.ts with new profile schema.
+- Task 5: Create ProfilesRepository class following existing patterns with methods for profile CRUD operations.
+- Task 6: Implement RLS policies for profile visibility, privacy settings, and proper access control.
+- Task 7: Integration testing to validate existing user compatibility, new functionality, and security constraints.
+    ]]></tasks>
+  </story>
+
+  <technical-implementation>
+    <database-schema>
+      <current-profiles-table>
+        <columns>
+          <column name="id" type="UUID" primary="true" references="auth.users.id"/>
+          <column name="display_name" type="string" required="true"/>
+          <column name="roles" type="string[]"/>
+          <column name="primary_cohort_id" type="UUID" nullable="true"/>
+          <column name="avatar_url" type="string" nullable="true"/>
+          <column name="bio" type="string" nullable="true"/>
+          <column name="reader_preferences" type="JSONB" default="{}"/>
+          <column name="created_at" type="timestamp"/>
+          <column name="updated_at" type="timestamp"/>
+        </columns>
+      </current-profiles-table>
+
+      <extensions-needed>
+        <column name="privacy_settings" type="JSONB" default="{}" description="User privacy controls for sharing"/>
+        <extension field="reading_preferences" additions="reading_speed field"/>
+      </extensions-needed>
+    </database-schema>
+
+    <repository-pattern>
+      <class name="ProfilesRepository" follows="HighlightsRepository">
+        <constructor>
+          <param name="supabase" type="SupabaseClient&lt;Database&gt;"/>
+        </constructor>
+        <methods>
+          <method name="getProfile" returns="Promise&lt;UserProfile&gt;">
+            <param name="userId" type="string"/>
+          </method>
+          <method name="updateProfile" returns="Promise&lt;UserProfile&gt;">
+            <param name="userId" type="string"/>
+            <param name="updates" type="Partial&lt;UserProfile&gt;"/>
+          </method>
+          <method name="createProfile" returns="Promise&lt;UserProfile&gt;">
+            <param name="profile" type="CreateProfileDto"/>
+          </method>
+          <method name="updateAvatar" returns="Promise&lt;UserProfile&gt;">
+            <param name="userId" type="string"/>
+            <param name="avatarUrl" type="string"/>
+          </method>
+          <method name="updatePreferences" returns="Promise&lt;UserProfile&gt;">
+            <param name="userId" type="string"/>
+            <param name="preferences" type="Partial&lt;ReadingPreferences&gt;"/>
+          </method>
+          <method name="updatePrivacySettings" returns="Promise&lt;UserProfile&gt;">
+            <param name="userId" type="string"/>
+            <param name="settings" type="PrivacySettings"/>
+          </method>
+        </methods>
+      </class>
+    </repository-pattern>
+
+    <rls-policies>
+      <policy name="Profile visibility based on privacy settings" operation="SELECT">
+        <condition>auth.uid() = id OR privacy_settings-&gt;&gt;'profile_visibility' = 'public' OR (privacy_settings-&gt;&gt;'profile_visibility' = 'cohorts' AND cohort membership)</condition>
+      </policy>
+      <policy name="Users can update own profile" operation="UPDATE">
+        <condition>auth.uid() = id</condition>
+      </policy>
+      <policy name="Users can create own profile" operation="INSERT">
+        <condition>auth.uid() = id</condition>
+      </policy>
+    </rls-policies>
+
+    <data-types>
+      <interface name="UserProfile">
+        <field name="id" type="string"/>
+        <field name="display_name" type="string"/>
+        <field name="avatar_url" type="string" optional="true"/>
+        <field name="bio" type="string" optional="true"/>
+        <field name="reading_preferences" type="ReadingPreferences"/>
+        <field name="privacy_settings" type="PrivacySettings"/>
+        <field name="created_at" type="string"/>
+        <field name="updated_at" type="string"/>
+      </interface>
+
+      <interface name="ReadingPreferences">
+        <field name="font_size" type="number"/>
+        <field name="theme" type="'light' | 'dark'"/>
+        <field name="reading_speed" type="'slow' | 'normal' | 'fast'"/>
+      </interface>
+
+      <interface name="PrivacySettings">
+        <field name="profile_visibility" type="'public' | 'cohorts' | 'private'"/>
+        <field name="share_reading_progress" type="boolean"/>
+        <field name="allow_shared_notes" type="boolean"/>
+      </interface>
+    </data-types>
+  </technical-implementation>
+
+  <file-locations>
+    <new-files>
+      <file path="src/lib/repositories/profiles.ts" description="Profile data access layer following existing pattern"/>
+      <file path="supabase/migrations/" description="Migration file for profile extensions (auto-generated)"/>
+      <file path="src/lib/repositories/__tests__/profiles.test.ts" description="Repository unit tests"/>
+      <file path="tests/backend/profiles.test.ts" description="Backend integration tests"/>
+    </new-files>
+
+    <modified-files>
+      <file path="src/lib/database.types.ts" description="Update with extended profile schema (regenerate from Supabase)"/>
+      <file path="src/hooks/useProfile.ts" description="May need updates for extended profile fields"/>
+    </modified-files>
+  </file-locations>
+
+  <testing-requirements>
+    <frameworks>
+      <framework name="Vitest" usage="Unit and integration tests"/>
+      <framework name="Testing Library" usage="Component testing"/>
+      <framework name="Supabase Test Client" usage="Database testing"/>
+    </frameworks>
+
+    <coverage-requirements>
+      <requirement>100% test coverage for ProfilesRepository methods</requirement>
+      <requirement>Migration script testing with up/down scenarios</requirement>
+      <requirement>RLS policy testing with different user contexts</requirement>
+      <requirement>Error handling validation for all failure modes</requirement>
+    </coverage-requirements>
+
+    <key-test-scenarios>
+      <scenario>Profile creation with valid and invalid data</scenario>
+      <scenario>Profile updates for all new fields (privacy settings, preferences)</scenario>
+      <scenario>Privacy settings enforcement across different user contexts</scenario>
+      <scenario>Avatar URL validation and update workflows</scenario>
+      <scenario>Backward compatibility with existing profile data</scenario>
+      <scenario>Migration rollback restores previous state exactly</scenario>
+    </key-test-scenarios>
+  </testing-requirements>
+
+  <integration-points>
+    <point name="Existing auth system">User creation and profile initialization flow</point>
+    <point name="Current useProfile hook">May need updates for extended fields</point>
+    <point name="Avatar upload functionality">Integration point for future Story 2.3</point>
+    <point name="Privacy settings">Integration with future social features (Epic 3)</point>
+  </integration-points>
+
+  <technical-constraints>
+    <constraint name="Backward compatibility" description="Must maintain existing profile data and functionality"/>
+    <constraint name="RLS enforcement" description="All profile access must go through Row Level Security policies"/>
+    <constraint name="Type safety" description="Use generated Database interface for all Supabase interactions"/>
+    <constraint name="Performance" description="Index new query patterns for privacy settings lookups"/>
+    <constraint name="Security" description="Validate JSONB structure and enforce privacy at database level"/>
+  </technical-constraints>
+
+  <acceptance-criteria>
+    <criteria id="1">Extend existing profiles table with display_name, avatar_url, reading_preferences, privacy_settings columns</criteria>
+    <criteria id="2">Create Supabase migration script with proper rollback capability</criteria>
+    <criteria id="3">Update database.types.ts with new profile schema</criteria>
+    <criteria id="4">Create profile repository functions following existing patterns</criteria>
+    <criteria id="5">Implement proper RLS policies for profile access control</criteria>
+  </acceptance-criteria>
+
+  <integration-verification>
+    <verification id="IV1">Verify existing user accounts continue to work without migration issues</verification>
+    <verification id="IV2">Test database constraints and privacy policies work correctly</verification>
+  </integration-verification>
+
+  <sources>
+    <source path="docs/architecture/fullstack-launch-features.md" sections="Data Models, Database Schema, API Specification"/>
+    <source path="docs/architecture/enhancement/source-tree.md" sections="New File Organization"/>
+    <source path="src/lib/database.types.ts" sections="Profiles table definition"/>
+    <source path="src/lib/repositories/highlights.ts" sections="Repository pattern example"/>
+    <source path="docs/prd/epic-and-story-structure.md" sections="Epic 2 and Story 2.1 requirements"/>
+  </sources>
+</story-context>

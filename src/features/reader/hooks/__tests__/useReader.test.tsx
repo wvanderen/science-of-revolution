@@ -1,7 +1,25 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useReader, ReaderProvider } from '../../contexts/ReaderContext'
-import { HighlightWithNote } from '../../highlights/hooks/useHighlights'
+import { type HighlightWithNote } from '../../../highlights/hooks/useHighlights'
+
+const createHighlight = (overrides: Partial<HighlightWithNote> = {}): HighlightWithNote => {
+  const timestamp = '2025-10-19T12:00:00.000Z'
+  return {
+    id: 'highlight-id',
+    user_id: 'user-1',
+    resource_section_id: 'section-1',
+    start_pos: 0,
+    end_pos: 10,
+    text_content: 'Sample highlight text',
+    color: 'yellow',
+    visibility: 'private',
+    created_at: timestamp,
+    updated_at: timestamp,
+    note: null,
+    ...overrides
+  }
+}
 
 // Test wrapper for the hook
 function createWrapper() {
@@ -112,7 +130,9 @@ describe('useReader Hook', () => {
 
     // Test direct value assignment
     const highlights1: Record<string, HighlightWithNote[]> = {
-      'section-1': [{ id: 'h1', text: 'First highlight', note: 'Note 1' }]
+      'section-1': [
+        createHighlight({ id: 'h1', text_content: 'First highlight', note: null })
+      ]
     }
 
     act(() => {
@@ -121,7 +141,13 @@ describe('useReader Hook', () => {
     expect(result.current.state.sectionHighlights).toEqual(highlights1)
 
     // Test functional updater
-    const highlights2: HighlightWithNote[] = [{ id: 'h2', text: 'Second highlight', note: 'Note 2' }]
+    const highlights2: HighlightWithNote[] = [
+      createHighlight({
+        id: 'h2',
+        resource_section_id: 'section-2',
+        text_content: 'Second highlight'
+      })
+    ]
 
     act(() => {
       actions.setSectionHighlights(prev => ({
