@@ -1,18 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { SharedNotesPanel } from '../SharedNotesPanel'
 import { ReaderProvider } from '../../contexts/ReaderContext'
 import { type SharedNote } from '../../../shared-notes/types'
 
 // Mock Supabase client
-jest.mock('../../../lib/supabaseClient', () => ({
+vi.mock('../../../lib/supabaseClient', () => ({
   default: {}
 }))
 
 // Mock SharedNotesRepository
-jest.mock('../../../lib/repositories/sharedNotes', () => ({
-  SharedNotesRepository: jest.fn().mockImplementation(() => ({
-    getSharedNotesBySectionId: jest.fn()
+vi.mock('../../../lib/repositories/sharedNotes', () => ({
+  SharedNotesRepository: vi.fn().mockImplementation(() => ({
+    getSharedNotesBySectionId: vi.fn()
   }))
 }))
 
@@ -78,7 +79,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('SharedNotesPanel', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should not render when isVisible is false', () => {
@@ -87,7 +88,7 @@ describe('SharedNotesPanel', () => {
         sectionId="section1"
         isVisible={false}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -100,7 +101,7 @@ describe('SharedNotesPanel', () => {
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -110,18 +111,18 @@ describe('SharedNotesPanel', () => {
   })
 
   it('should render shared notes when data is loaded', async () => {
-    const { SharedNotesRepository } = require('../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../lib/repositories/sharedNotes')
     const mockRepo = {
-      getSharedNotesBySectionId: jest.fn().mockResolvedValue(mockSharedNotes)
+      getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     renderWithProviders(
       <SharedNotesPanel
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -134,18 +135,18 @@ describe('SharedNotesPanel', () => {
   })
 
   it('should render empty state when no notes', async () => {
-    const { SharedNotesRepository } = require('../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../lib/repositories/sharedNotes')
     const mockRepo = {
-      getSharedNotesBySectionId: jest.fn().mockResolvedValue([])
+      getSharedNotesBySectionId: vi.fn().mockResolvedValue([])
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     renderWithProviders(
       <SharedNotesPanel
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -187,7 +188,7 @@ describe('SharedNotesPanel', () => {
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -233,18 +234,18 @@ describe('SharedNotesPanel', () => {
   })
 
   it('should handle error state', async () => {
-    const { SharedNotesRepository } = require('../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../lib/repositories/sharedNotes')
     const mockRepo = {
-      getSharedNotesBySectionId: jest.fn().mockRejectedValue(new Error('Network error'))
+      getSharedNotesBySectionId: vi.fn().mockRejectedValue(new Error('Network error'))
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     renderWithProviders(
       <SharedNotesPanel
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 
@@ -255,20 +256,20 @@ describe('SharedNotesPanel', () => {
   })
 
   it('should handle retry on error', async () => {
-    const { SharedNotesRepository } = require('../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../lib/repositories/sharedNotes')
     const mockRepo = {
-      getSharedNotesBySectionId: jest.fn()
+      getSharedNotesBySectionId: vi.fn()
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     renderWithProviders(
       <SharedNotesPanel
         sectionId="section1"
         isVisible={true}
         filters={{}}
-        onFiltersChange={jest.fn()}
+        onFiltersChange={vi.fn()}
       />
     )
 

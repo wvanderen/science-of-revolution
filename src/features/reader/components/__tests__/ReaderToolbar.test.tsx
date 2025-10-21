@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi } from 'vitest'
 import { ReaderToolbar } from '../ReaderToolbar'
+import { ReaderProvider } from '../../contexts/ReaderContext'
 import { type Database } from '../../../../lib/database.types'
 
 // Mock useProfile hook
@@ -11,6 +13,54 @@ vi.mock('../../../../hooks/useProfile', () => ({
     isFacilitator: false
   })
 }))
+
+// Mock useReader hook
+vi.mock(import('../../contexts/ReaderContext'), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useReader: () => ({
+      state: {
+        sharedNotes: {
+          visible: false,
+          notes: [],
+          filters: {},
+          loading: false,
+          selectedNoteId: null
+        }
+      },
+      actions: {
+        setSharedNotesVisible: vi.fn(),
+        setSharedNotes: vi.fn(),
+        setSharedNotesFilters: vi.fn(),
+        setSharedNotesLoading: vi.fn(),
+        setSelectedSharedNoteId: vi.fn(),
+        resetSharedNotes: vi.fn()
+      }
+    })
+  }
+})
+
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      gcTime: 0
+    }
+  }
+})
+
+const renderWithProviders = (component: React.ReactElement) => {
+  const queryClient = createTestQueryClient()
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ReaderProvider>
+        {component}
+      </ReaderProvider>
+    </QueryClientProvider>
+  )
+}
 
 // Mock database types
 type ResourceSection = Database['public']['Tables']['resource_sections']['Row']
@@ -52,7 +102,7 @@ describe('ReaderToolbar', () => {
   })
 
   it('renders the compact toolbar with essential elements', () => {
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     expect(screen.getByText('45%')).toBeInTheDocument()
     expect(screen.getByLabelText('Close reader')).toBeInTheDocument()
@@ -61,7 +111,7 @@ describe('ReaderToolbar', () => {
   })
 
   it('shows current section info in button title', () => {
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionButton = screen.getByLabelText('Open section menu')
     expect(sectionButton).toHaveAttribute('title', 'Section 1 of 3: Introduction (Ctrl+K)')
@@ -69,7 +119,7 @@ describe('ReaderToolbar', () => {
 
   it('calls onClose when back button is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const backButton = screen.getByLabelText('Close reader')
     await user.click(backButton)
@@ -79,7 +129,7 @@ describe('ReaderToolbar', () => {
 
   it('calls onOpenPreferences when preferences button is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const preferencesButton = screen.getByLabelText('Open reader preferences')
     await user.click(preferencesButton)
@@ -89,7 +139,7 @@ describe('ReaderToolbar', () => {
 
   it('displays progress percentage correctly', () => {
     const customProgress = { ...mockProgress, scroll_percent: 75 }
-    render(<ReaderToolbar
+    renderWithProviders(<ReaderToolbar
       {...defaultProps}
       progress={customProgress}
       scrollPercent={customProgress.scroll_percent}
@@ -100,7 +150,7 @@ describe('ReaderToolbar', () => {
 
   it('shows progress bar with correct width', () => {
     const customProgress = { ...mockProgress, scroll_percent: 60 }
-    render(<ReaderToolbar
+    renderWithProviders(<ReaderToolbar
       {...defaultProps}
       progress={customProgress}
       scrollPercent={customProgress.scroll_percent}
@@ -113,7 +163,7 @@ describe('ReaderToolbar', () => {
 
   it('opens section menu when section button is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -124,7 +174,7 @@ describe('ReaderToolbar', () => {
 
   it('displays all sections in the menu', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -140,7 +190,7 @@ describe('ReaderToolbar', () => {
 
   it('highlights current section in menu', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} currentSectionId={'2'} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} currentSectionId={'2'} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -152,7 +202,7 @@ describe('ReaderToolbar', () => {
 
   it('calls onSectionSelect and closes menu when section is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -169,7 +219,7 @@ describe('ReaderToolbar', () => {
 
   it('handles keyboard shortcuts for section navigation', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} currentSectionId={'2'} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} currentSectionId={'2'} />)
 
     // Test right arrow (next section)
     await user.keyboard('{ArrowRight}')
@@ -184,7 +234,7 @@ describe('ReaderToolbar', () => {
 
   it('opens section menu with Ctrl+K shortcut', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     await user.keyboard('{Control>}{k}{/Control}')
 
@@ -200,7 +250,7 @@ describe('ReaderToolbar', () => {
     const input = document.querySelector('input')!
     input.focus()
 
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     await user.keyboard('{ArrowRight}')
     expect(defaultProps.onSectionSelect).not.toHaveBeenCalled()
@@ -208,7 +258,7 @@ describe('ReaderToolbar', () => {
 
   it('closes menu when clicking outside', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -222,7 +272,7 @@ describe('ReaderToolbar', () => {
 
   it('closes menu when close button is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -235,7 +285,7 @@ describe('ReaderToolbar', () => {
 
   it('shows keyboard shortcuts hint in menu', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const sectionMenuButton = screen.getByLabelText('Open section menu')
     await user.click(sectionMenuButton)
@@ -245,7 +295,7 @@ describe('ReaderToolbar', () => {
 
   it('shows completion checkbox with correct state', () => {
     const inProgressProgress = { ...mockProgress, status: 'in_progress' as const }
-    render(<ReaderToolbar {...defaultProps} progress={inProgressProgress} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} progress={inProgressProgress} />)
 
     const checkbox = screen.getByLabelText('Mark section as completed')
     expect(checkbox).not.toBeChecked()
@@ -253,7 +303,7 @@ describe('ReaderToolbar', () => {
 
   it('shows completed checkbox when section is completed', () => {
     const completedProgress = { ...mockProgress, status: 'completed' as const }
-    render(<ReaderToolbar {...defaultProps} progress={completedProgress} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} progress={completedProgress} />)
 
     const checkbox = screen.getByLabelText('Mark section as completed')
     expect(checkbox).toBeChecked()
@@ -261,7 +311,7 @@ describe('ReaderToolbar', () => {
 
   it('calls onToggleCompleted when checkbox is clicked', async () => {
     const user = userEvent.setup()
-    render(<ReaderToolbar {...defaultProps} />)
+    renderWithProviders(<ReaderToolbar {...defaultProps} />)
 
     const checkbox = screen.getByLabelText('Mark section as completed')
     await user.click(checkbox)

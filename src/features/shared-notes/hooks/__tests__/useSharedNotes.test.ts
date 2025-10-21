@@ -7,7 +7,8 @@ import { type SharedNote } from '../../types'
 
 // Mock Supabase client
 vi.mock('../../../../lib/supabaseClient', () => ({
-  default: {}
+  default: {},
+  supabase: {}
 }))
 
 // Mock SharedNotesRepository
@@ -46,8 +47,8 @@ const mockSharedNotes: SharedNote[] = [
     text_content: 'Test highlight 2',
     color: '#34d399',
     visibility: 'global',
-    created_at: '2024-01-14T15:30:00Z',
-    updated_at: '2024-01-14T15:30:00Z',
+    created_at: '2024-01-16T15:30:00Z', // Newer date
+    updated_at: '2024-01-16T15:30:00Z',
     author_name: 'Jane Smith',
     author_avatar: null,
     cohort_name: null,
@@ -88,11 +89,11 @@ describe('useSharedNotes', () => {
   })
 
   it('should load shared notes successfully', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     const { result } = renderHook(
       () => useSharedNotes({ sectionId: 'section1' }),
@@ -109,11 +110,11 @@ describe('useSharedNotes', () => {
   })
 
   it('should apply filters correctly', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     const { result } = renderHook(
       () => useSharedNotes({
@@ -131,11 +132,11 @@ describe('useSharedNotes', () => {
   })
 
   it('should apply search filter correctly', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     const { result } = renderHook(
       () => useSharedNotes({
@@ -153,7 +154,7 @@ describe('useSharedNotes', () => {
   })
 
   it('should not fetch when disabled', () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn()
     }
@@ -168,7 +169,7 @@ describe('useSharedNotes', () => {
   })
 
   it('should handle errors gracefully', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockRejectedValue(new Error('Network error'))
     }
@@ -193,11 +194,11 @@ describe('useSharedNotesSimple', () => {
   })
 
   it('should work similarly to useSharedNotes but without pagination', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     const { result } = renderHook(
       () => useSharedNotesSimple({ sectionId: 'section1' }),
@@ -219,11 +220,11 @@ describe('useSharedNotesStats', () => {
   })
 
   it('should calculate statistics correctly', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue(mockSharedNotes)
     }
-    SharedNotesRepository.mockImplementation(() => mockRepo)
+    ;(SharedNotesRepository as any).mockImplementation(() => mockRepo)
 
     const { result } = renderHook(
       () => useSharedNotesStats('section1'),
@@ -244,7 +245,7 @@ describe('useSharedNotesStats', () => {
   })
 
   it('should handle empty notes array', async () => {
-    const { SharedNotesRepository } = require('../../../../lib/repositories/sharedNotes')
+    const { SharedNotesRepository } = await import('../../../../lib/repositories/sharedNotes')
     const mockRepo = {
       getSharedNotesBySectionId: vi.fn().mockResolvedValue([])
     }
