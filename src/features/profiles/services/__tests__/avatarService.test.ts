@@ -99,15 +99,23 @@ describe('AvatarService', () => {
       const mockContext = {
         drawImage: vi.fn(),
         toBlob: vi.fn((callback) => {
-          const blob = new Blob(['compressed'], { type: 'image/jpeg' })
-          callback(blob)
+          setTimeout(() => {
+            const blob = new Blob(['compressed'], { type: 'image/jpeg' })
+            callback(blob)
+          }, 0)
         })
       }
 
       const mockCanvas = {
         width: 0,
         height: 0,
-        getContext: vi.fn(() => mockContext)
+        getContext: vi.fn(() => mockContext),
+        toBlob: vi.fn((callback, mimeType, quality) => {
+          setTimeout(() => {
+            const mockBlob = new Blob(['compressed image data'], { type: mimeType || 'image/jpeg' })
+            callback(mockBlob)
+          }, 0)
+        })
       } as any
 
       vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas)

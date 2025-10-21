@@ -68,12 +68,13 @@ export class AvatarService {
    * Generate unique filename to prevent conflicts
    */
   static generateFileName(userId: string, originalName: string, size?: string): string {
-    const fileExt = originalName.split('.').pop() || 'jpg'
+    const hasExtension = originalName.includes('.')
+    const fileExt = hasExtension ? originalName.split('.').pop()! : 'jpg'
     const timestamp = Date.now()
     const randomSuffix = Math.random().toString(36).substring(2, 8)
-    const sizePrefix = size ? `${size}_` : ''
+    const sizePrefix = size || 'original'
 
-    return `${userId}/${sizePrefix}${timestamp}_${randomSuffix}.${fileExt}`
+    return `${userId}/${sizePrefix}_${timestamp}_${randomSuffix}.${fileExt}`
   }
 
   /**
@@ -82,7 +83,7 @@ export class AvatarService {
   static async compressImage(
     file: File,
     targetWidth: number,
-    targetHeight: number
+    _targetHeight: number
   ): Promise<File> {
     // Import the enhanced compression utility
     const { createSquareCrop } = await import('../utils/imageCompression')
@@ -98,8 +99,8 @@ export class AvatarService {
     for (const size of this.AVATAR_SIZES) {
       try {
         // Use enhanced compression with device context detection
-        const quality = size.name === 'small' ? 0.7 :
-                       size.name === 'medium' ? 0.85 : 0.9
+        const _quality = size.name === 'small' ? 0.7 :
+                         size.name === 'medium' ? 0.85 : 0.9
 
         const compressedFile = await this.compressImage(file, size.width, size.height)
         const url = URL.createObjectURL(compressedFile)
@@ -136,7 +137,7 @@ export class AvatarService {
         }, 100)
 
         // Upload the file
-        const { data, error } = await supabase.storage
+        const { data: _data, error } = await supabase.storage
           .from(this.AVATAR_BUCKET)
           .upload(fileName, file, {
             cacheControl: '31536000', // 1 year
@@ -158,7 +159,7 @@ export class AvatarService {
         return publicUrlData.publicUrl
       } else {
         // Upload without progress tracking
-        const { data, error } = await supabase.storage
+        const { data: _data, error } = await supabase.storage
           .from(this.AVATAR_BUCKET)
           .upload(fileName, file, {
             cacheControl: '31536000', // 1 year

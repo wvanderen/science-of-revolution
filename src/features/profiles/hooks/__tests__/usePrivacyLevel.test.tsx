@@ -2,12 +2,12 @@ import { renderHook } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { usePrivacyLevel } from '../usePrivacyLevel'
 
-const mockUseSession = vi.fn()
-
-// Mock the useSession hook
-vi.mock('../../../hooks/useSession', () => ({
-  useSession: mockUseSession
+vi.mock('../../../../hooks/useSession', () => ({
+  useSession: vi.fn()
 }))
+
+import { useSession } from '../../../../hooks/useSession'
+const mockUseSession = vi.mocked(useSession)
 
 const mockProfile = {
   id: 'user123',
@@ -49,7 +49,8 @@ describe('usePrivacyLevel', () => {
   describe('when viewing own profile', () => {
     it('should always allow viewing own profile regardless of privacy settings', () => {
       mockUseSession.mockReturnValue({
-        session: { user: { id: 'user123' } }
+        session: { user: { id: 'user123' } },
+        loading: false
       })
 
       const { result } = renderHook(() => usePrivacyLevel('public'))
@@ -62,7 +63,8 @@ describe('usePrivacyLevel', () => {
 
     it('should always allow viewing own profile in any context', () => {
       mockUseSession.mockReturnValue({
-        session: { user: { id: 'user123' } }
+        session: { user: { id: 'user123' } },
+        loading: false
       })
 
       const { result } = renderHook(() => usePrivacyLevel('cohorts'))

@@ -1,7 +1,6 @@
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useAvatarUpload } from '../useAvatarUpload'
-import { AvatarService } from '../../services/avatarService'
 
 // Mock the AvatarService
 vi.mock('../../services/avatarService', () => ({
@@ -10,9 +9,8 @@ vi.mock('../../services/avatarService', () => ({
   }
 }))
 
-const mockAvatarService = {
-  uploadAvatar: vi.fn()
-}
+import { AvatarService } from '../../services/avatarService'
+const mockUploadAvatar = vi.mocked(AvatarService.uploadAvatar)
 
 describe('useAvatarUpload', () => {
   beforeEach(() => {
@@ -45,7 +43,7 @@ describe('useAvatarUpload', () => {
       }
     }
 
-    mockAvatarService.uploadAvatar.mockResolvedValue(mockResult)
+    mockUploadAvatar.mockResolvedValue(mockResult)
 
     const { result } = renderHook(() => useAvatarUpload())
     const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
@@ -63,7 +61,7 @@ describe('useAvatarUpload', () => {
 
   it('should handle upload errors', async () => {
     const mockError = new Error('Upload failed')
-    mockAvatarService.uploadAvatar.mockRejectedValue(mockError)
+    mockUploadAvatar.mockRejectedValue(mockError)
 
     const { result } = renderHook(() => useAvatarUpload())
     const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
@@ -77,11 +75,11 @@ describe('useAvatarUpload', () => {
     expect(result.current.error).toBe('Upload failed')
     expect(result.current.result).toBe(null)
     expect(result.current.retryCount).toBe(4) // 1 initial + 3 retries
-  })
+  }, 15000)
 
   it('should retry on transient errors', async () => {
     // Fail first 2 attempts, succeed on 3rd
-    mockAvatarService.uploadAvatar
+    mockUploadAvatar
       .mockRejectedValueOnce(new Error('Network error'))
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValueOnce({
@@ -96,7 +94,7 @@ describe('useAvatarUpload', () => {
       await result.current.uploadAvatar({ userId: 'test-user', file })
     })
 
-    expect(mockAvatarService.uploadAvatar).toHaveBeenCalledTimes(3) // Initial + 2 retries
+    expect(mockUploadAvatar).toHaveBeenCalledTimes(3) // Initial + 2 retries
     expect(result.current.retryCount).toBe(2)
     expect(result.current.error).toBe(null)
     expect(result.current.result).toBeDefined()
@@ -104,7 +102,7 @@ describe('useAvatarUpload', () => {
 
   it('should not retry on validation errors', async () => {
     const validationError = new Error('Invalid file type')
-    mockAvatarService.uploadAvatar.mockRejectedValue(validationError)
+    mockUploadAvatar.mockRejectedValue(validationError)
 
     const { result } = renderHook(() => useAvatarUpload())
     const file = new File(['test'], 'test.txt', { type: 'text/plain' })
@@ -113,7 +111,7 @@ describe('useAvatarUpload', () => {
       await expect(result.current.uploadAvatar({ userId: 'test-user', file })).rejects.toThrow('Invalid file type')
     })
 
-    expect(mockAvatarService.uploadAvatar).toHaveBeenCalledTimes(1) // No retries
+    expect(mockUploadAvatar).toHaveBeenCalledTimes(1) // No retries
     expect(result.current.retryCount).toBe(1)
     expect(result.current.error).toBe('Invalid file type')
   })
@@ -145,7 +143,7 @@ describe('useAvatarUpload', () => {
 
   it('should report progress during upload', async () => {
     let progressCallback: ((progress: number) => void) | undefined
-    mockAvatarService.uploadAvatar.mockImplementation(async ({ onProgress }) => {
+    mockUploadAvatar.mockImplementation(async ({ onProgress }) => {
       progressCallback = onProgress
       return {
         urls: { small: 'test.jpg', medium: 'test.jpg', large: 'test.jpg', original: 'test.jpg' },

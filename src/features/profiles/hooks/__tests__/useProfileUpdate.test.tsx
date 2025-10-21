@@ -42,9 +42,11 @@ const baseProfile: ProfileRow = {
 }
 
 function createWrapper (queryClient: QueryClient) {
-  return ({ children }: { children: React.ReactNode }) => (
+  const TestComponent = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  TestComponent.displayName = 'TestQueryClientProvider'
+  return TestComponent
 }
 
 describe('useProfileUpdate', () => {

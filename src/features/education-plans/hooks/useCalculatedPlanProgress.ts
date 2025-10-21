@@ -4,7 +4,7 @@ import { useSupabase } from '../../../components/providers/SupabaseProvider'
 import { usePlanTopics } from './usePlanTopics'
 import { ProgressRepository } from '../../../lib/repositories/progress'
 import { PlanTopicRepository } from '../../../lib/repositories/planTopics'
-import type { Database } from '../../../lib/database.types'
+// import type { Database } from '../../../lib/database.types'
 
 
 /**

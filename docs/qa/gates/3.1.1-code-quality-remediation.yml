@@ -1,0 +1,48 @@
+schema: 1
+story: '3.1.1'
+story_title: 'Code Quality and Test Infrastructure Remediation'
+gate: CONCERNS
+status_reason: 'Significant improvement with 89% test failure reduction, but 2 non-critical timeout issues remain in image processing tests.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-10-21T15:42:00Z'
+
+top_issues:
+  - id: "PERF-001"
+    severity: low
+    finding: "Image processing tests have long execution times (>10s) causing timeouts"
+    suggested_action: "Consider optimizing test image sizes or implementing test-specific performance configurations"
+    suggested_owner: "dev"
+
+waiver: { active: false }
+
+quality_score: 80
+expires: "2025-11-04T15:42:00Z"
+
+evidence:
+  tests_reviewed: 361
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 5, 6, 7]
+    ac_gaps: [4]  # Partial - 4/6 image compression issues fixed
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No security concerns identified. File upload validation and error handling properly implemented.'
+  performance:
+    status: CONCERNS
+    notes: 'Long test execution times for image processing. Core application performance unaffected.'
+  reliability:
+    status: PASS
+    notes: 'Core functionality stable. Privacy and avatar features working correctly.'
+  maintainability:
+    status: PASS
+    notes: 'Code follows established patterns. Test architecture well-structured.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Optimize image processing test performance'
+      refs: ['src/features/profiles/utils/__tests__/imageCompression.test.ts']
+    - action: 'Consider test-specific image sizes for faster execution'
+      refs: ['src/features/profiles/utils/imageCompression.ts']

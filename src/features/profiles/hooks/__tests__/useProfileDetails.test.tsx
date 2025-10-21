@@ -56,9 +56,11 @@ function createWrapper () {
     }
   })
 
-  return ({ children }: { children: React.ReactNode }) => (
+  const TestComponent = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  TestComponent.displayName = 'TestQueryClientProvider'
+  return TestComponent
 }
 
 describe('useProfileDetails', () => {

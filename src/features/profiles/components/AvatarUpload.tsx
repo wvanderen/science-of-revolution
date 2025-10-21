@@ -45,7 +45,7 @@ export function AvatarUpload ({
   disabled = false
 }: AvatarUploadProps): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const cameraInputRef = useRef<HTMLInputElement | null>(null)
+  const _cameraInputRef = useRef<HTMLInputElement | null>(null)
   const [pendingFile, setPendingFile] = useState<PendingFilePreview | null>(null)
   const [croppingFile, setCroppingFile] = useState<CroppingFile | null>(null)
   const [showUrlInput, setShowUrlInput] = useState(false)

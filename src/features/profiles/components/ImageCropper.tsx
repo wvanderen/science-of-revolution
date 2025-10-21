@@ -10,7 +10,7 @@ function isMobileDevice(): boolean {
 /**
  * Get touch position relative to element
  */
-function getTouchPosition(touch: Touch, element: HTMLElement): { x: number; y: number } {
+function _getTouchPosition(touch: Touch, element: HTMLElement): { x: number; y: number } {
   const rect = element.getBoundingClientRect()
   return {
     x: touch.clientX - rect.left,
@@ -38,7 +38,7 @@ export function ImageCropper ({
   imageFile,
   onCropComplete,
   onCancel,
-  aspectRatio = 1,
+  _aspectRatio = 1,
   cropSize = 256
 }: ImageCropperProps): JSX.Element {
   const [image, setImage] = useState<HTMLImageElement | null>(null)
