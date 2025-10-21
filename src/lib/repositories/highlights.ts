@@ -98,16 +98,52 @@ export class HighlightsRepository {
 
   /**
    * Get shared highlights for a section (respecting visibility)
+   * Optionally filter by cohort_id
    */
-  async getSharedBySectionId (sectionId: string): Promise<Highlight[]> {
-    const { data, error } = await this.supabase
+  async getSharedBySectionId (sectionId: string, cohortId?: string): Promise<Highlight[]> {
+    let query = this.supabase
       .from('highlights')
       .select('*')
       .eq('resource_section_id', sectionId)
       .in('visibility', ['cohort', 'global'])
-      .order('created_at', { ascending: false })
+
+    if (cohortId != null) {
+      query = query.eq('cohort_id', cohortId)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error != null) throw error
     return data ?? []
+  }
+
+  /**
+   * Get all highlights for a specific cohort
+   */
+  async getByCohortId (cohortId: string): Promise<HighlightWithNote[]> {
+    const { data, error } = await this.supabase
+      .from('highlights')
+      .select('*, notes (*)')
+      .eq('cohort_id', cohortId)
+      .order('created_at', { ascending: false })
+
+    if (error != null) throw error
+    type HighlightWithNotesQuery = Highlight & { notes: Note[] | Note | null }
+    const rows = (data ?? []) as HighlightWithNotesQuery[]
+
+    return rows.map(({ notes, ...highlight }) => {
+      let note: Note | null = null
+
+      if (Array.isArray(notes) && notes.length > 0) {
+        note = notes[0] ?? null
+      } else if (notes != null && !Array.isArray(notes)) {
+        note = notes
+      }
+
+      return {
+        ...(highlight as Highlight),
+        note
+      }
+    })
   }
 }
