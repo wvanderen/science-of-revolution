@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useProfile } from '../../../hooks/useProfile'
+import { useReader } from '../contexts/ReaderContext'
 import { type Database } from '../../../lib/database.types'
 
 type ResourceSection = Database['public']['Tables']['resource_sections']['Row']
@@ -33,6 +34,10 @@ export function ReaderToolbar ({
 }: ReaderToolbarProps): JSX.Element {
   const [isSectionMenuOpen, setIsSectionMenuOpen] = useState(false)
   const { isFacilitator } = useProfile()
+  const {
+    state: { sharedNotes },
+    actions: { setSharedNotesVisible }
+  } = useReader()
 
   const currentSection = sections.find(s => s.id === currentSectionId)
   const currentIndex = currentSection ? currentSection.order : 0
@@ -115,8 +120,29 @@ export function ReaderToolbar ({
             )}
           </div>
 
-          {/* Center: Section menu button */}
+          {/* Center: Section menu and shared notes buttons */}
           <div className="flex items-center gap-3">
+            {/* Shared notes toggle */}
+            <button
+              onClick={() => setSharedNotesVisible(!sharedNotes.visible)}
+              className={`btn text-sm py-1.5 px-2 relative ${
+                sharedNotes.visible
+                  ? 'btn-primary text-primary-foreground'
+                  : 'btn-secondary'
+              }`}
+              aria-label={sharedNotes.visible ? 'Hide shared notes' : 'Show shared notes'}
+              title={sharedNotes.visible ? 'Hide shared notes panel' : 'Show shared notes from your cohort'}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+              {sharedNotes.notes.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center">
+                  {sharedNotes.notes.length > 99 ? '99+' : sharedNotes.notes.length}
+                </span>
+              )}
+            </button>
+
             <button
               id="section-menu-button"
               onClick={() => setIsSectionMenuOpen(!isSectionMenuOpen)}

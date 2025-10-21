@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useMemo, useRef, useState, useEffect, ReactNode } from 'react'
 import { HighlightWithNote } from '../../highlights/hooks/useHighlights'
+import { type SharedNote, type SharedNotesFilters } from '../../shared-notes/types'
 
 // Types for Reader State Management
 export interface ReaderState {
@@ -18,6 +19,15 @@ export interface ReaderState {
   // Progress State
   localScrollPercent: number
   sectionHighlights: Record<string, HighlightWithNote[]>
+
+  // Shared Notes State
+  sharedNotes: {
+    visible: boolean
+    notes: SharedNote[]
+    filters: SharedNotesFilters
+    loading: boolean
+    selectedNoteId: string | null
+  }
 }
 
 // Interface for all actions that can update state
@@ -37,6 +47,14 @@ export interface ReaderActions {
   // Progress Actions
   setLocalScrollPercent: (percent: number) => void
   setSectionHighlights: (highlights: Record<string, HighlightWithNote[]> | ((prev: Record<string, HighlightWithNote[]>) => Record<string, HighlightWithNote[]>)) => void
+
+  // Shared Notes Actions
+  setSharedNotesVisible: (visible: boolean) => void
+  setSharedNotes: (notes: SharedNote[] | ((prev: SharedNote[]) => SharedNote[])) => void
+  setSharedNotesFilters: (filters: SharedNotesFilters | ((prev: SharedNotesFilters) => SharedNotesFilters)) => void
+  setSharedNotesLoading: (loading: boolean) => void
+  setSelectedSharedNoteId: (noteId: string | null) => void
+  resetSharedNotes: () => void
 }
 
 // Complete context interface combining state and actions
@@ -119,6 +137,13 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
   const [localScrollPercent, setLocalScrollPercent] = useState(0)
   const [sectionHighlights, setSectionHighlights] = useState<Record<string, HighlightWithNote[]>>({})
 
+  // Shared Notes state
+  const [sharedNotesVisible, setSharedNotesVisible] = useState(false)
+  const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([])
+  const [sharedNotesFilters, setSharedNotesFilters] = useState<SharedNotesFilters>({})
+  const [sharedNotesLoading, setSharedNotesLoading] = useState(false)
+  const [selectedSharedNoteId, setSelectedSharedNoteId] = useState<string | null>(null)
+
   // Refs for advanced functionality
   const sectionRefs = useRef(new Map<string, HTMLElement>())
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -156,6 +181,14 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     setLocalScrollPercent(percent)
   }, [])
 
+  // Reset shared notes function
+  const resetSharedNotes = useCallback(() => {
+    setSharedNotes([])
+    setSharedNotesFilters({})
+    setSharedNotesLoading(false)
+    setSelectedSharedNoteId(null)
+  }, [])
+
   // Memoize state to prevent unnecessary re-renders
   const state = useMemo<ReaderState>(() => ({
     currentSectionId,
@@ -165,7 +198,14 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     isPreferencesOpen,
     isEditDocumentOpen,
     localScrollPercent,
-    sectionHighlights
+    sectionHighlights,
+    sharedNotes: {
+      visible: sharedNotesVisible,
+      notes: sharedNotes,
+      filters: sharedNotesFilters,
+      loading: sharedNotesLoading,
+      selectedNoteId: selectedSharedNoteId
+    }
   }), [
     currentSectionId,
     selectedHighlightId,
@@ -174,7 +214,12 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     isPreferencesOpen,
     isEditDocumentOpen,
     localScrollPercent,
-    sectionHighlights
+    sectionHighlights,
+    sharedNotesVisible,
+    sharedNotes,
+    sharedNotesFilters,
+    sharedNotesLoading,
+    selectedSharedNoteId
   ])
 
   // Memoize actions to prevent unnecessary re-renders
@@ -186,7 +231,13 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     setIsPreferencesOpen,
     setIsEditDocumentOpen,
     setLocalScrollPercent,
-    setSectionHighlights
+    setSectionHighlights,
+    setSharedNotesVisible,
+    setSharedNotes,
+    setSharedNotesFilters,
+    setSharedNotesLoading,
+    setSelectedSharedNoteId,
+    resetSharedNotes
   }), [
     setCurrentSectionId,
     setSelectedHighlightId,
@@ -195,7 +246,13 @@ export function ReaderProvider ({ children }: ReaderProviderProps): JSX.Element 
     setIsPreferencesOpen,
     setIsEditDocumentOpen,
     setLocalScrollPercent,
-    setSectionHighlights
+    setSectionHighlights,
+    setSharedNotesVisible,
+    setSharedNotes,
+    setSharedNotesFilters,
+    setSharedNotesLoading,
+    setSelectedSharedNoteId,
+    resetSharedNotes
   ])
 
   // Create refs object with getter/setter functions
